@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="800" height="600" viewBox="0 0 800 600" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="800" height="600" fill="white"/>
+  
+  <!-- Base Platform -->
+  <path d="M200 400 L600 400 L600 300 L200 300 Z" fill="black"/>
+  
+  <!-- Stairs -->
+  <path d="M300 300 L600 300 L600 250 L500 250 L500 200 L400 200 L400 150 L300 150 Z" fill="#E5E5E5"/>
+  
+  <!-- People -->
+  <g transform="translate(350, 220)">
+    <!-- Person 1 (Leading) -->
+    <g transform="rotate(-15)">
+      <circle cx="0" cy="0" r="15" fill="black"/>
+      <rect x="-7" y="15" width="14" height="30" fill="black"/>
+      <!-- Legs in climbing position -->
+      <line x1="-7" y1="45" x2="-15" y2="60" stroke="black" stroke-width="14" stroke-linecap="round"/>
+      <line x1="7" y1="45" x2="15" y2="55" stroke="black" stroke-width="14" stroke-linecap="round"/>
+    </g>
+  </g>
+  
+  <g transform="translate(420, 180)">
+    <!-- Person 2 (Following) -->
+    <g transform="rotate(-15)">
+      <circle cx="0" cy="0" r="15" fill="black"/>
+      <rect x="-7" y="15" width="14" height="30" fill="black"/>
+      <!-- Legs in climbing position -->
+      <line x1="-7" y1="45" x2="-15" y2="60" stroke="black" stroke-width="14" stroke-linecap="round"/>
+      <line x1="7" y1="45" x2="15" y2="55" stroke="black" stroke-width="14" stroke-linecap="round"/>
+    </g>
+  </g>
+</svg> 
