@@ -15,7 +15,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         {children}
       </main>
       <footer className="border-t border-mono-light py-4 px-6 text-center text-mono-gray text-sm">
-        <p>© 2025 Monochrome Mind. All rights reserved.</p>
+        <p>© 2025 RiseUp. All rights reserved.</p>
       </footer>
       <Toaster />
     </div>

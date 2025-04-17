@@ -23,7 +23,7 @@ const Header: React.FC = () => {
   return (
     <header className="border-b border-mono-light py-4 px-6 flex justify-between items-center">
       <div className="flex items-center gap-2">
-        <Link to="/" className="text-2xl font-bold text-mono-black">RISEUP</Link>
+        <Link to="/" className="text-2xl font-bold text-mono-black">RiseUp</Link>
       </div>
       
       <nav className="hidden md:flex items-center space-x-6">
