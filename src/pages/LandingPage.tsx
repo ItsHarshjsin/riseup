@@ -9,7 +9,7 @@ const LandingPage: React.FC = () => {
     <div className="min-h-screen bg-mono-white flex flex-col">
       <header className="border-b border-mono-light py-4 px-6 flex justify-between items-center">
         <div className="flex items-center gap-2">
-          <span className="text-2xl font-bold text-mono-black">MONOCHROME MIND</span>
+          <span className="text-2xl font-bold text-mono-black">RISEUP</span>
         </div>
         
         <div className="flex items-center gap-4">
@@ -30,10 +30,10 @@ const LandingPage: React.FC = () => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
               <div>
                 <h1 className="text-5xl font-bold leading-tight mb-6">
-                  Build Better Habits, Together
+                  Rise Beyond Your Limits
                 </h1>
                 <p className="text-xl text-mono-gray mb-8">
-                  Monochrome Mind helps you track habits, build streaks, and team up with others to achieve your personal growth goals.
+                  RiseUp helps you track habits, build streaks, and team up with others to achieve your personal growth goals.
                 </p>
                 <div className="space-y-4 mb-8">
                   <div className="flex items-start gap-3">
@@ -110,7 +110,7 @@ const LandingPage: React.FC = () => {
       </main>
       
       <footer className="border-t border-mono-light py-4 px-6 text-center text-mono-gray text-sm">
-        <p>© 2025 Monochrome Mind. All rights reserved.</p>
+        <p>© 2025 RiseUp. All rights reserved.</p>
       </footer>
     </div>
   );
