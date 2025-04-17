@@ -27,7 +27,7 @@ const Header: React.FC = () => {
       </div>
       
       <nav className="hidden md:flex items-center space-x-6">
-        <Link to="/" className="flex items-center gap-2 hover:text-mono-dark transition-colors">
+        <Link to="/dashboard" className="flex items-center gap-2 hover:text-mono-dark transition-colors">
           <Home size={18} />
           <span>Dashboard</span>
         </Link>
@@ -72,17 +72,23 @@ const Header: React.FC = () => {
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem>
-              <Users className="mr-2 h-4 w-4" />
-              <span>My Clan</span>
+              <Link to="/clan" className="flex items-center w-full">
+                <Users className="mr-2 h-4 w-4" />
+                <span>My Clan</span>
+              </Link>
             </DropdownMenuItem>
             <DropdownMenuItem>
-              <Award className="mr-2 h-4 w-4" />
-              <span>Achievements</span>
+              <Link to="/achievements" className="flex items-center w-full">
+                <Award className="mr-2 h-4 w-4" />
+                <span>Achievements</span>
+              </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem>
-              <LogOut className="mr-2 h-4 w-4" />
-              <span>Log out</span>
+              <Link to="/" className="flex items-center w-full">
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Log out</span>
+              </Link>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
