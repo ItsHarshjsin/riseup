@@ -52,6 +52,14 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
+                mono: {
+                    black: '#000000',
+                    dark: '#333333',
+                    gray: '#666666',
+                    light: '#CCCCCC',
+                    lighter: '#F5F5F5',
+                    white: '#FFFFFF',
+                },
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
 					foreground: 'hsl(var(--sidebar-foreground))',
