@@ -1,28 +1,36 @@
+
 import React from 'react';
 import { Download, Share2 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Avatar } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { currentUser } from '@/data/mockData';
 
 interface ShareCardProps {
-  username: string;
-  level: number;
-  streak: number;
-  badges: number;
-  achievements: string[];
-  categories: string[];
+  username?: string;
+  level?: number;
+  streak?: number;
+  badges?: number;
+  achievements?: string[];
+  categories?: string[];
   profileImage?: string;
 }
 
 const ShareCard = ({
-  username,
-  level,
-  streak,
-  badges,
-  achievements,
-  categories,
-  profileImage
+  username = currentUser.username,
+  level = currentUser.level,
+  streak = currentUser.streak,
+  badges = currentUser.badges.length,
+  achievements = currentUser.badges.slice(0, 3).map(badge => badge.name),
+  categories = ["Productivity", "Learning", "Mindfulness"],
+  profileImage = currentUser.avatar
 }: ShareCardProps) => {
+  const initials = username
+    .split(' ')
+    .map(name => name[0])
+    .join('')
+    .toUpperCase();
+
   return (
     <div className="space-y-6">
       <div>
@@ -38,18 +46,13 @@ const ShareCard = ({
         <div className="bg-black text-white p-6">
           <div className="flex flex-col space-y-6">
             {/* User Info */}
-            <div className="flex items-start gap-4">
-              <div className="w-16 h-16 bg-neutral-800 rounded-lg flex items-center justify-center">
-                {profileImage ? (
-                  <img src={profileImage} alt={username} className="object-cover rounded-lg" />
-                ) : (
-                  <div className="h-full w-full flex items-center justify-center">
-                    <svg className="h-8 w-8 text-white" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-                    </svg>
-                  </div>
-                )}
-              </div>
+            <div className="flex items-center gap-4">
+              <Avatar className="h-16 w-16 rounded-lg border border-white/20">
+                <AvatarImage src={profileImage} alt={username} />
+                <AvatarFallback className="bg-neutral-800 text-white text-xl">
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
               <div>
                 <h3 className="text-xl font-bold mb-2">{username}</h3>
                 <div className="flex flex-wrap gap-2">
@@ -64,36 +67,38 @@ const ShareCard = ({
 
             {/* Stats */}
             <div className="grid grid-cols-3 gap-4">
-              <div className="bg-white rounded-lg p-4 text-center">
-                <div className="text-2xl font-bold text-black">{level}</div>
-                <div className="text-xs text-gray-600">LEVEL</div>
+              <div className="border border-white/20 rounded-lg p-4 text-center">
+                <div className="text-2xl font-bold">{level}</div>
+                <div className="text-xs text-white/60">LEVEL</div>
               </div>
-              <div className="bg-white rounded-lg p-4 text-center">
-                <div className="text-2xl font-bold text-black">{streak}</div>
-                <div className="text-xs text-gray-600">DAY STREAK</div>
+              <div className="border border-white/20 rounded-lg p-4 text-center">
+                <div className="text-2xl font-bold">{streak}</div>
+                <div className="text-xs text-white/60">DAY STREAK</div>
               </div>
-              <div className="bg-white rounded-lg p-4 text-center">
-                <div className="text-2xl font-bold text-black">{badges}</div>
-                <div className="text-xs text-gray-600">BADGES</div>
+              <div className="border border-white/20 rounded-lg p-4 text-center">
+                <div className="text-2xl font-bold">{badges}</div>
+                <div className="text-xs text-white/60">BADGES</div>
               </div>
             </div>
 
             {/* Achievements */}
-            <div>
-              <div className="text-sm text-white/60 mb-2">TOP ACHIEVEMENTS</div>
-              <div className="flex flex-wrap gap-2">
-                {achievements.map((achievement) => (
-                  <span key={achievement} className="px-3 py-1 bg-black border border-white/20 rounded-full text-sm text-white">
-                    {achievement}
-                  </span>
-                ))}
+            {achievements.length > 0 && (
+              <div>
+                <div className="text-sm text-white/60 mb-2">TOP ACHIEVEMENTS</div>
+                <div className="flex flex-wrap gap-2">
+                  {achievements.map((achievement) => (
+                    <span key={achievement} className="px-3 py-1 bg-white text-black rounded-full text-sm font-medium">
+                      {achievement}
+                    </span>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Brand */}
             <div className="text-right">
-              <div className="text-2xl font-bold text-white/80 font-mono transform -rotate-6">
-                RiseUp!
+              <div className="text-sm text-white/60">
+                RiseUp
               </div>
             </div>
           </div>
@@ -120,4 +125,4 @@ const ShareCard = ({
   );
 };
 
-export default ShareCard; 
+export default ShareCard;
