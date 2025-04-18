@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import Layout from "@/components/layout/Layout";
 import ProfileCard from "@/components/profile/ProfileCard";
-import ProfileCardGenerate from "@/components/profile/ProfileCardGenerate";
+import CustomCardGenerator from "@/components/profile/CustomCardGenerator";
 import { 
   Card, 
   CardContent, 
@@ -107,37 +107,14 @@ const ProfilePage: React.FC = () => {
               <div className="space-y-6">
                 <Card className="border-mono-light shadow-sm">
                   <CardHeader className="border-b border-mono-light">
-                    <CardTitle className="text-xl font-bold">Digital Share Card</CardTitle>
+                    <CardTitle className="text-xl font-bold">Custom Share Card</CardTitle>
                   </CardHeader>
                   <CardContent className="pt-4">
                     <p className="text-mono-gray mb-4">
-                      Generate a shareable profile card to showcase your progress and achievements.
+                      Create and customize your profile card to showcase your progress and achievements.
                       Download or share this card on social media.
                     </p>
-                    <ProfileCardGenerate />
-                  </CardContent>
-                </Card>
-              </div>
-              
-              <div className="space-y-6">
-                <Card className="border-mono-light shadow-sm">
-                  <CardHeader className="border-b border-mono-light">
-                    <CardTitle className="text-xl font-bold">Customize Your Card</CardTitle>
-                  </CardHeader>
-                  <CardContent className="pt-4">
-                    <p className="text-mono-gray mb-4">
-                      Your profile card automatically highlights your top achievements and stats.
-                      Keep completing tasks and challenges to unlock more badges and improve your stats!
-                    </p>
-                    <div className="bg-mono-lighter p-4 rounded-md">
-                      <h3 className="font-medium mb-2">Coming Soon</h3>
-                      <ul className="list-disc list-inside text-mono-gray space-y-1 text-sm">
-                        <li>Custom card layouts</li>
-                        <li>Custom typography</li>
-                        <li>Badge selection</li>
-                        <li>Additional stats to display</li>
-                      </ul>
-                    </div>
+                    <CustomCardGenerator />
                   </CardContent>
                 </Card>
               </div>

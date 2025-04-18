@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -8,6 +9,8 @@ import Layout from "@/components/layout/Layout";
 import LandingPage from "@/pages/LandingPage";
 import Dashboard from "@/pages/Dashboard";
 import Clan from "@/pages/Clan";
+import ClanPage from "@/pages/ClanPage";
+import ClanManagementPage from "@/pages/ClanManagementPage";
 import Achievements from "@/pages/Achievements";
 import Stats from "@/pages/Stats";
 import NotFound from "./pages/NotFound";
@@ -44,9 +47,17 @@ const App: React.FC = () => {
               path="/clan"
               element={
                 isAuthenticated ? (
-                  <Layout>
-                    <Clan />
-                  </Layout>
+                  <ClanPage />
+                ) : (
+                  <Navigate to="/" replace />
+                )
+              }
+            />
+            <Route
+              path="/clan-management"
+              element={
+                isAuthenticated ? (
+                  <ClanManagementPage />
                 ) : (
                   <Navigate to="/" replace />
                 )
