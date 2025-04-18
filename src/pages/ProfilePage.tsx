@@ -1,171 +1,203 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Layout from "@/components/layout/Layout";
-import ProfileCard from "@/components/profile/ProfileCard";
-import CustomCardGenerator from "@/components/profile/CustomCardGenerator";
-import ShareCard from "@/components/ShareCard";
-import ProfileCustomization from "@/components/profile/ProfileCustomization";
-import { 
-  Card, 
-  CardContent, 
-  CardHeader, 
-  CardTitle 
-} from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import BadgeGrid from "@/components/achievements/BadgeGrid";
-import { currentUser } from "@/data/mockData";
+import ShareCard from "@/components/profile/ShareCard";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { User } from "@/types";
+import { useToast } from "@/hooks/use-toast";
+import { Pencil } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Card } from "@/components/ui/card";
 
-const ProfilePage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState("profile");
-  const [userData, setUserData] = useState<User>(currentUser);
-  
-  const handleProfileUpdate = (updatedProfile: Partial<User>) => {
-    setUserData({
-      ...userData,
-      ...updatedProfile
+interface Profile {
+  username: string;
+  bio: string;
+  avatar: string;
+  level: number;
+  points: number;
+  streak: number;
+  refer_code: string;
+}
+
+const ProfilePage = () => {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [badges, setBadges] = useState<any[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({
+    username: '',
+    bio: ''
+  });
+
+  useEffect(() => {
+    if (user) {
+      fetchProfile();
+      fetchBadges();
+      fetchCategories();
+    }
+  }, [user]);
+
+  const fetchProfile = async () => {
+    if (!user) return;
+    
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .single();
+      
+    if (error) {
+      toast({
+        title: "Error fetching profile",
+        description: error.message,
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setProfile(data);
+    setEditForm({
+      username: data.username,
+      bio: data.bio || ''
     });
   };
-  
+
+  const fetchBadges = async () => {
+    if (!user) return;
+    
+    const { data, error } = await supabase
+      .from('user_badges')
+      .select('badges(*)')
+      .eq('user_id', user.id);
+      
+    if (error) {
+      console.error('Error fetching badges:', error);
+      return;
+    }
+    
+    setBadges(data.map(item => item.badges));
+  };
+
+  const fetchCategories = async () => {
+    if (!user) return;
+    
+    const { data, error } = await supabase
+      .from('user_categories')
+      .select('categories(name)')
+      .eq('user_id', user.id);
+      
+    if (error) {
+      console.error('Error fetching categories:', error);
+      return;
+    }
+    
+    setCategories(data.map(item => item.categories.name));
+  };
+
+  const handleProfileUpdate = async () => {
+    if (!user || !profile) return;
+    
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        username: editForm.username,
+        bio: editForm.bio,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', user.id);
+      
+    if (error) {
+      toast({
+        title: "Error updating profile",
+        description: error.message,
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    toast({
+      title: "Profile updated",
+      description: "Your profile has been updated successfully"
+    });
+    
+    setIsEditing(false);
+    fetchProfile();
+  };
+
+  if (!profile) {
+    return <Layout>Loading...</Layout>;
+  }
+
   return (
     <Layout>
-      <div className="space-y-6">
-        <h1 className="text-3xl font-bold mb-2">Your Profile</h1>
-        
-        <Tabs defaultValue="profile" onValueChange={setActiveTab} className="w-full">
-          <TabsList className="w-full border-b border-mono-light rounded-none mb-6">
-            <TabsTrigger 
-              value="profile" 
-              className={`flex-1 rounded-none ${
-                activeTab === "profile" 
-                  ? "border-b-2 border-mono-black" 
-                  : "text-mono-gray"
-              }`}
-            >
-              Profile
-            </TabsTrigger>
-            <TabsTrigger 
-              value="customization"
-              className={`flex-1 rounded-none ${
-                activeTab === "customization" 
-                  ? "border-b-2 border-mono-black" 
-                  : "text-mono-gray"
-              }`}
-            >
-              Customization
-            </TabsTrigger>
-            <TabsTrigger 
-              value="share"
-              className={`flex-1 rounded-none ${
-                activeTab === "share" 
-                  ? "border-b-2 border-mono-black" 
-                  : "text-mono-gray"
-              }`}
-            >
-              Share Card
-            </TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="profile" className="mt-0">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="space-y-6">
-                <ProfileCard 
-                  user={userData} 
-                  shareable={false} 
-                />
-                
-                <Card className="border-mono-light shadow-sm">
-                  <CardHeader className="border-b border-mono-light">
-                    <CardTitle className="text-xl font-bold">Focus Areas</CardTitle>
-                  </CardHeader>
-                  <CardContent className="pt-4">
-                    <div className="flex flex-wrap gap-2">
-                      <Badge variant="outline" className="bg-mono-lighter px-3 py-2">Productivity</Badge>
-                      <Badge variant="outline" className="bg-mono-lighter px-3 py-2">Learning</Badge>
-                      <Badge variant="outline" className="bg-mono-lighter px-3 py-2">Mindfulness</Badge>
-                      <Badge variant="outline" className="bg-mono-lighter px-3 py-2">Fitness</Badge>
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                <Card className="border-mono-light shadow-sm">
-                  <CardHeader className="border-b border-mono-light">
-                    <CardTitle className="text-xl font-bold">Stats at a Glance</CardTitle>
-                  </CardHeader>
-                  <CardContent className="pt-4">
-                    <ul className="space-y-3">
-                      <li className="flex justify-between">
-                        <span className="text-mono-gray">Level</span>
-                        <span className="font-medium">{userData.level}</span>
-                      </li>
-                      <li className="flex justify-between">
-                        <span className="text-mono-gray">Current Streak</span>
-                        <span className="font-medium">{userData.streak} days</span>
-                      </li>
-                      <li className="flex justify-between">
-                        <span className="text-mono-gray">Total Points</span>
-                        <span className="font-medium">{userData.points.toLocaleString()}</span>
-                      </li>
-                      <li className="flex justify-between">
-                        <span className="text-mono-gray">Tasks Completed</span>
-                        <span className="font-medium">{userData.completedTasks.length}</span>
-                      </li>
-                      <li className="flex justify-between">
-                        <span className="text-mono-gray">Badges Earned</span>
-                        <span className="font-medium">{userData.badges.length}</span>
-                      </li>
-                    </ul>
-                  </CardContent>
-                </Card>
-              </div>
-              
-              <div className="lg:col-span-2 space-y-6">
-                <BadgeGrid showLocked={true} />
-              </div>
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="customization" className="mt-0">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="space-y-6">
-                <ProfileCustomization 
-                  user={userData}
-                  onUpdate={handleProfileUpdate}
+      <div className="max-w-4xl mx-auto space-y-6">
+        <div className="flex justify-between items-center">
+          <h1 className="text-3xl font-bold">Your Profile</h1>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsEditing(true)}
+          >
+            <Pencil className="h-4 w-4" />
+          </Button>
+        </div>
+
+        <Card className="p-6">
+          <ShareCard
+            username={profile.username}
+            level={profile.level}
+            streak={profile.streak}
+            badges={badges.length}
+            achievements={badges.slice(0, 3).map(badge => badge.name)}
+            categories={categories}
+            profileImage={profile.avatar}
+          />
+        </Card>
+
+        <Dialog open={isEditing} onOpenChange={setIsEditing}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit Profile</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Username</label>
+                <Input
+                  value={editForm.username}
+                  onChange={(e) => setEditForm(prev => ({
+                    ...prev,
+                    username: e.target.value
+                  }))}
                 />
               </div>
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="share" className="mt-0">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="space-y-6">
-                <ShareCard
-                  username={userData.username}
-                  level={userData.level}
-                  streak={userData.streak}
-                  badges={userData.badges.length}
-                  achievements={userData.badges.slice(0, 3).map(badge => badge.name)}
-                  profileImage={userData.avatar}
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Bio</label>
+                <Textarea
+                  value={editForm.bio}
+                  onChange={(e) => setEditForm(prev => ({
+                    ...prev,
+                    bio: e.target.value
+                  }))}
+                  placeholder="Tell others about yourself"
                 />
               </div>
-              <div className="space-y-6">
-                <Card className="border-mono-light shadow-sm">
-                  <CardHeader className="border-b border-mono-light">
-                    <CardTitle className="text-xl font-bold">Custom Share Card</CardTitle>
-                  </CardHeader>
-                  <CardContent className="pt-4">
-                    <p className="text-mono-gray mb-4">
-                      Create and customize your profile card to showcase your progress and achievements.
-                      Download or share this card on social media.
-                    </p>
-                    <CustomCardGenerator user={userData} />
-                  </CardContent>
-                </Card>
-              </div>
+              <Button onClick={handleProfileUpdate} className="w-full">
+                Save Changes
+              </Button>
             </div>
-          </TabsContent>
-        </Tabs>
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );
