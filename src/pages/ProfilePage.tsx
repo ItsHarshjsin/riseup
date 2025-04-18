@@ -3,6 +3,8 @@ import React, { useState } from "react";
 import Layout from "@/components/layout/Layout";
 import ProfileCard from "@/components/profile/ProfileCard";
 import CustomCardGenerator from "@/components/profile/CustomCardGenerator";
+import ShareCard from "@/components/ShareCard";
+import ProfileCustomization from "@/components/profile/ProfileCustomization";
 import { 
   Card, 
   CardContent, 
@@ -13,9 +15,18 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import BadgeGrid from "@/components/achievements/BadgeGrid";
 import { currentUser } from "@/data/mockData";
+import { User } from "@/types";
 
 const ProfilePage: React.FC = () => {
   const [activeTab, setActiveTab] = useState("profile");
+  const [userData, setUserData] = useState<User>(currentUser);
+  
+  const handleProfileUpdate = (updatedProfile: Partial<User>) => {
+    setUserData({
+      ...userData,
+      ...updatedProfile
+    });
+  };
   
   return (
     <Layout>
@@ -35,6 +46,16 @@ const ProfilePage: React.FC = () => {
               Profile
             </TabsTrigger>
             <TabsTrigger 
+              value="customization"
+              className={`flex-1 rounded-none ${
+                activeTab === "customization" 
+                  ? "border-b-2 border-mono-black" 
+                  : "text-mono-gray"
+              }`}
+            >
+              Customization
+            </TabsTrigger>
+            <TabsTrigger 
               value="share"
               className={`flex-1 rounded-none ${
                 activeTab === "share" 
@@ -49,7 +70,10 @@ const ProfilePage: React.FC = () => {
           <TabsContent value="profile" className="mt-0">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="space-y-6">
-                <ProfileCard shareable={false} />
+                <ProfileCard 
+                  user={userData} 
+                  shareable={false} 
+                />
                 
                 <Card className="border-mono-light shadow-sm">
                   <CardHeader className="border-b border-mono-light">
@@ -73,23 +97,23 @@ const ProfilePage: React.FC = () => {
                     <ul className="space-y-3">
                       <li className="flex justify-between">
                         <span className="text-mono-gray">Level</span>
-                        <span className="font-medium">{currentUser.level}</span>
+                        <span className="font-medium">{userData.level}</span>
                       </li>
                       <li className="flex justify-between">
                         <span className="text-mono-gray">Current Streak</span>
-                        <span className="font-medium">{currentUser.streak} days</span>
+                        <span className="font-medium">{userData.streak} days</span>
                       </li>
                       <li className="flex justify-between">
                         <span className="text-mono-gray">Total Points</span>
-                        <span className="font-medium">{currentUser.points.toLocaleString()}</span>
+                        <span className="font-medium">{userData.points.toLocaleString()}</span>
                       </li>
                       <li className="flex justify-between">
                         <span className="text-mono-gray">Tasks Completed</span>
-                        <span className="font-medium">{currentUser.completedTasks.length}</span>
+                        <span className="font-medium">{userData.completedTasks.length}</span>
                       </li>
                       <li className="flex justify-between">
                         <span className="text-mono-gray">Badges Earned</span>
-                        <span className="font-medium">{currentUser.badges.length}</span>
+                        <span className="font-medium">{userData.badges.length}</span>
                       </li>
                     </ul>
                   </CardContent>
@@ -102,8 +126,29 @@ const ProfilePage: React.FC = () => {
             </div>
           </TabsContent>
           
+          <TabsContent value="customization" className="mt-0">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="space-y-6">
+                <ProfileCustomization 
+                  user={userData}
+                  onUpdate={handleProfileUpdate}
+                />
+              </div>
+            </div>
+          </TabsContent>
+          
           <TabsContent value="share" className="mt-0">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="space-y-6">
+                <ShareCard
+                  username={userData.username}
+                  level={userData.level}
+                  streak={userData.streak}
+                  badges={userData.badges.length}
+                  achievements={userData.badges.slice(0, 3).map(badge => badge.name)}
+                  profileImage={userData.avatar}
+                />
+              </div>
               <div className="space-y-6">
                 <Card className="border-mono-light shadow-sm">
                   <CardHeader className="border-b border-mono-light">
@@ -114,7 +159,7 @@ const ProfilePage: React.FC = () => {
                       Create and customize your profile card to showcase your progress and achievements.
                       Download or share this card on social media.
                     </p>
-                    <CustomCardGenerator />
+                    <CustomCardGenerator user={userData} />
                   </CardContent>
                 </Card>
               </div>
