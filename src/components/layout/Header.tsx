@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   DropdownMenu,
@@ -10,8 +10,6 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
-import { useAuth } from "@/context/auth";
-import { supabase } from "@/lib/supabase";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard" },
@@ -23,27 +21,10 @@ const navigation = [
 const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
-  const { user } = useAuth();
-  const [profile, setProfile] = useState<{ username: string; level: number; avatar: string; } | null>(null);
-
-  useEffect(() => {
-    if (user) {
-      fetchProfile();
-    }
-  }, [user]);
-
-  const fetchProfile = async () => {
-    if (!user) return;
-    
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('username, level, avatar')
-      .eq('id', user.id)
-      .single();
-      
-    if (!error && data) {
-      setProfile(data);
-    }
+  const currentUser = {
+    username: "JohnDoe",
+    level: 5,
+    avatar: "/path/to/avatar.jpg",
   };
 
   const isActive = (path: string) => location.pathname === path;
@@ -58,6 +39,7 @@ const Header = () => {
             </Link>
           </div>
 
+          {/* Desktop Navigation */}
           <div className="hidden md:flex md:items-center md:space-x-6">
             {navigation.map((item) => (
               <Link
@@ -79,9 +61,9 @@ const Header = () => {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                   <Avatar className="h-10 w-10">
-                    <AvatarImage src={profile?.avatar} alt={profile?.username} />
+                    <AvatarImage src={currentUser.avatar} alt={currentUser.username} />
                     <AvatarFallback>
-                      {profile?.username?.slice(0, 2).toUpperCase() || 'U'}
+                      {currentUser.username.slice(0, 2).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                 </Button>
@@ -89,8 +71,8 @@ const Header = () => {
               <DropdownMenuContent align="end" className="w-56">
                 <div className="flex items-center justify-start gap-2 p-2">
                   <div className="flex flex-col space-y-1 leading-none">
-                    <p className="font-medium">{profile?.username}</p>
-                    <p className="text-sm text-mono-gray">Level {profile?.level}</p>
+                    <p className="font-medium">{currentUser.username}</p>
+                    <p className="text-sm text-mono-gray">Level {currentUser.level}</p>
                   </div>
                 </div>
                 <DropdownMenuSeparator />
@@ -110,6 +92,7 @@ const Header = () => {
               </DropdownMenuContent>
             </DropdownMenu>
 
+            {/* Mobile menu button */}
             <div className="flex md:hidden">
               <Button
                 variant="ghost"
@@ -128,6 +111,7 @@ const Header = () => {
           </div>
         </div>
 
+        {/* Mobile menu */}
         <div
           className={`${
             isOpen ? "block" : "hidden"
