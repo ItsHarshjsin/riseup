@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -8,8 +8,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
+import { Button, type ButtonProps } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard" },
@@ -18,16 +21,65 @@ const navigation = [
   { name: "Stats", href: "/stats" },
 ];
 
+interface Profile {
+  username: string;
+  level: number;
+  avatar: string | null;
+}
+
 const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const location = useLocation();
-  const currentUser = {
-    username: "JohnDoe",
-    level: 5,
-    avatar: "/path/to/avatar.jpg",
+  const navigate = useNavigate();
+  const { user, signOut } = useAuth();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (user) {
+      fetchProfile();
+    }
+  }, [user]);
+
+  const fetchProfile = async () => {
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('username, level, avatar')
+      .eq('id', user.id)
+      .single();
+
+    if (error) {
+      console.error('Error fetching profile:', error);
+      return;
+    }
+
+    setProfile(data);
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      navigate('/');
+      toast({
+        title: "Signed out successfully",
+        description: "Come back soon!"
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error signing out",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
   };
 
   const isActive = (path: string) => location.pathname === path;
+
+  if (!user || !profile) {
+    return null;
+  }
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-mono-light bg-mono-white/80 backdrop-blur-sm">
@@ -61,9 +113,9 @@ const Header = () => {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                   <Avatar className="h-10 w-10">
-                    <AvatarImage src={currentUser.avatar} alt={currentUser.username} />
+                    <AvatarImage src={profile.avatar || undefined} alt={profile.username} />
                     <AvatarFallback>
-                      {currentUser.username.slice(0, 2).toUpperCase()}
+                      {profile.username.slice(0, 2).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                 </Button>
@@ -71,22 +123,25 @@ const Header = () => {
               <DropdownMenuContent align="end" className="w-56">
                 <div className="flex items-center justify-start gap-2 p-2">
                   <div className="flex flex-col space-y-1 leading-none">
-                    <p className="font-medium">{currentUser.username}</p>
-                    <p className="text-sm text-mono-gray">Level {currentUser.level}</p>
+                    <p className="font-medium">{profile.username}</p>
+                    <p className="text-sm text-mono-gray">Level {profile.level}</p>
                   </div>
                 </div>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
+                <DropdownMenuItem asChild>
                   <Link to="/profile" className="w-full">Profile</Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem>
+                <DropdownMenuItem asChild>
                   <Link to="/clan" className="w-full">My Clan</Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem>
+                <DropdownMenuItem asChild>
                   <Link to="/achievements" className="w-full">Achievements</Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="text-red-600">
+                <DropdownMenuItem 
+                  className="text-red-600 cursor-pointer"
+                  onClick={handleSignOut}
+                >
                   Log out
                 </DropdownMenuItem>
               </DropdownMenuContent>

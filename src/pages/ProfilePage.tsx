@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import Layout from "@/components/layout/Layout";
 import ShareCard from "@/components/ShareCard";
@@ -13,12 +12,15 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
+import AvatarSelector from "@/components/AvatarSelector";
 
-interface Profile {
+// Database profile type
+interface DBProfile {
   username: string;
   bio: string;
   avatar: string;
@@ -26,6 +28,15 @@ interface Profile {
   points: number;
   streak: number;
   refer_code: string;
+  tagline?: string;
+  created_at: string;
+  updated_at: string;
+  id: string;
+}
+
+// Application profile type
+interface Profile extends Omit<DBProfile, 'tagline'> {
+  tagline: string; // Make tagline required in our app
 }
 
 const ProfilePage = () => {
@@ -37,8 +48,11 @@ const ProfilePage = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({
     username: '',
-    bio: ''
+    bio: '',
+    tagline: '',
+    avatarUrl: null as string | null
   });
+  const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -51,25 +65,38 @@ const ProfilePage = () => {
   const fetchProfile = async () => {
     if (!user) return;
     
-    const { data, error } = await supabase
+    type ProfileResponse = {
+      data: DBProfile | null;
+      error: any;
+    };
+
+    const { data: dbProfile, error }: ProfileResponse = await supabase
       .from('profiles')
       .select('*')
       .eq('id', user.id)
       .single();
       
-    if (error) {
+    if (error || !dbProfile) {
       toast({
         title: "Error fetching profile",
-        description: error.message,
+        description: error?.message || "Profile not found",
         variant: "destructive"
       });
       return;
     }
+
+    // Convert DBProfile to Profile, ensuring tagline has a default value
+    const profile: Profile = {
+      ...dbProfile,
+      tagline: dbProfile.tagline || 'Rising to new heights'
+    };
     
-    setProfile(data);
+    setProfile(profile);
     setEditForm({
-      username: data.username,
-      bio: data.bio || ''
+      username: profile.username,
+      bio: profile.bio || '',
+      tagline: profile.tagline,
+      avatarUrl: profile.avatar
     });
   };
 
@@ -105,34 +132,47 @@ const ProfilePage = () => {
     setCategories(data.map(item => item.categories.name));
   };
 
+  const handleAvatarSelect = (avatarUrl: string) => {
+    setEditForm(prev => ({
+      ...prev,
+      avatarUrl
+    }));
+  };
+
   const handleProfileUpdate = async () => {
     if (!user || !profile) return;
     
-    const { error } = await supabase
-      .from('profiles')
-      .update({
-        username: editForm.username,
-        bio: editForm.bio,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', user.id);
+    setIsUpdating(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          username: editForm.username,
+          bio: editForm.bio,
+          tagline: editForm.tagline,
+          avatar: editForm.avatarUrl,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user.id);
+        
+      if (error) throw error;
       
-    if (error) {
+      toast({
+        title: "Profile updated",
+        description: "Your profile has been updated successfully"
+      });
+      
+      setIsEditing(false);
+      fetchProfile();
+    } catch (error: any) {
       toast({
         title: "Error updating profile",
         description: error.message,
         variant: "destructive"
       });
-      return;
+    } finally {
+      setIsUpdating(false);
     }
-    
-    toast({
-      title: "Profile updated",
-      description: "Your profile has been updated successfully"
-    });
-    
-    setIsEditing(false);
-    fetchProfile();
   };
 
   if (!profile) {
@@ -159,18 +199,27 @@ const ProfilePage = () => {
             level={profile.level}
             streak={profile.streak}
             badges={badges.length}
-            achievements={badges.slice(0, 3).map(badge => badge.name)}
-            categories={categories}
+            tagline={profile.tagline}
             profileImage={profile.avatar}
+            onUpdate={(data) => {
+              setEditForm(prev => ({ ...prev, ...data }));
+            }}
           />
         </Card>
 
         <Dialog open={isEditing} onOpenChange={setIsEditing}>
-          <DialogContent>
+          <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
               <DialogTitle>Edit Profile</DialogTitle>
+              <DialogDescription>
+                Update your profile information
+              </DialogDescription>
             </DialogHeader>
-            <div className="space-y-4 py-4">
+            <div className="space-y-6 py-4">
+              <AvatarSelector
+                currentAvatar={editForm.avatarUrl}
+                onAvatarSelect={handleAvatarSelect}
+              />
               <div className="space-y-2">
                 <label className="text-sm font-medium">Username</label>
                 <Input
@@ -179,6 +228,17 @@ const ProfilePage = () => {
                     ...prev,
                     username: e.target.value
                   }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Tagline</label>
+                <Input
+                  value={editForm.tagline}
+                  onChange={(e) => setEditForm(prev => ({
+                    ...prev,
+                    tagline: e.target.value
+                  }))}
+                  placeholder="Add your personal tagline"
                 />
               </div>
               <div className="space-y-2">
@@ -192,8 +252,12 @@ const ProfilePage = () => {
                   placeholder="Tell others about yourself"
                 />
               </div>
-              <Button onClick={handleProfileUpdate} className="w-full">
-                Save Changes
+              <Button 
+                onClick={handleProfileUpdate} 
+                className="w-full"
+                disabled={isUpdating}
+              >
+                {isUpdating ? 'Saving...' : 'Save Changes'}
               </Button>
             </div>
           </DialogContent>
