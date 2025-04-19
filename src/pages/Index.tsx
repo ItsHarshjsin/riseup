@@ -1,43 +1,34 @@
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import Layout from "@/components/layout/Layout";
 import DailyTasks from "@/components/dashboard/DailyTasks";
 import StreakCalendar from "@/components/dashboard/StreakCalendar";
 import UserStats from "@/components/dashboard/UserStats";
 import ProfileCard from "@/components/profile/ProfileCard";
 import ClanOverview from "@/components/clan/ClanOverview";
-import { currentUser } from "@/data/mockData";
-import { User } from "@/types";
+import { useAuth } from "@/hooks/useAuth";
 
 const Index: React.FC = () => {
-  const [userData, setUserData] = useState<User>(currentUser);
+  const { user, loading } = useAuth();
   
-  // This would be replaced with a real Supabase query in a production app
-  useEffect(() => {
-    // Simulate fetching user data
-    // In a real app with Supabase, we would do something like:
-    // const fetchUserData = async () => {
-    //   const { data, error } = await supabase
-    //     .from('users')
-    //     .select('*')
-    //     .eq('id', user.id)
-    //     .single();
-    //   
-    //   if (data) setUserData(data);
-    // };
-    // 
-    // fetchUserData();
-    
-    // For now, we'll just use the mock data
-    setUserData(currentUser);
-  }, []);
+  if (loading) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center h-96">
+          <div className="text-center">
+            <p className="text-xl text-mono-gray">Loading...</p>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           <h1 className="text-3xl font-bold mb-2">
-            Welcome back, {userData.username}
+            Welcome back, {user?.email?.split('@')[0] || 'User'}
           </h1>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -49,7 +40,17 @@ const Index: React.FC = () => {
         </div>
         
         <div className="space-y-6">
-          <ProfileCard user={userData} />
+          <ProfileCard user={{
+            id: user?.id || '',
+            username: user?.email?.split('@')[0] || 'User',
+            avatar: '',
+            level: 1,
+            points: 0,
+            streak: 0,
+            badges: [],
+            completedTasks: [],
+            createdAt: new Date()
+          }} />
           <ClanOverview />
         </div>
       </div>
