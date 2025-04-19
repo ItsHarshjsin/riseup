@@ -5,13 +5,39 @@ import { Progress } from "@/components/ui/progress";
 import { Trophy, Target, Zap, Star } from "lucide-react";
 import { useDashboard } from "@/hooks/useDashboard";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
+
+interface UserProfile {
+  level: number;
+  points: number;
+}
 
 const UserStats: React.FC = () => {
   const { user } = useAuth();
   const { categoryMastery } = useDashboard();
   
+  // Fetch user profile data from Supabase
+  const { data: userProfile } = useQuery({
+    queryKey: ['userProfile', user?.id],
+    queryFn: async (): Promise<UserProfile> => {
+      if (!user?.id) return { level: 1, points: 0 };
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('level, points')
+        .eq('id', user.id)
+        .single();
+        
+      if (error) throw error;
+      return data as UserProfile;
+    },
+    enabled: !!user?.id,
+    initialData: { level: 1, points: 0 }
+  });
+  
   // Calculate level progress
-  const points = user?.points || 0;
+  const points = userProfile?.points || 0;
   const levelProgress = ((points % 500) / 500) * 100;
   
   const categoryStats = [
@@ -34,8 +60,8 @@ const UserStats: React.FC = () => {
       <CardContent className="pt-4">
         <div className="mb-6">
           <div className="flex justify-between mb-2">
-            <div className="text-sm font-medium">Level {user?.level || 1}</div>
-            <div className="text-sm font-medium">Level {(user?.level || 1) + 1}</div>
+            <div className="text-sm font-medium">Level {userProfile?.level || 1}</div>
+            <div className="text-sm font-medium">Level {(userProfile?.level || 1) + 1}</div>
           </div>
           <Progress value={levelProgress} className="h-2 bg-mono-lighter" />
           <div className="text-xs text-mono-gray mt-2 text-center">
