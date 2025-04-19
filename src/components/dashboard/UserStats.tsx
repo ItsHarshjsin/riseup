@@ -13,9 +13,14 @@ interface UserProfile {
   points: number;
 }
 
+interface CategoryMastery {
+  category: string;
+  progress: number;
+}
+
 const UserStats: React.FC = () => {
   const { user } = useAuth();
-  const { categoryMastery } = useDashboard();
+  const { categoryMastery = [] } = useDashboard();
   
   // Fetch user profile data from Supabase
   const { data: userProfile } = useQuery({
@@ -45,12 +50,17 @@ const UserStats: React.FC = () => {
     { name: "Learning", icon: <Zap className="h-5 w-5" /> },
     { name: "Mindfulness", icon: <Star className="h-5 w-5" /> },
     { name: "Productivity", icon: <Target className="h-5 w-5" /> },
-  ].map(stat => ({
-    ...stat,
-    progress: categoryMastery.find(cm => 
+  ].map(stat => {
+    // Find the matching category mastery or default to 0
+    const matchingCategory = categoryMastery.find(cm => 
       cm.category.toLowerCase() === stat.name.toLowerCase()
-    )?.progress || 0
-  }));
+    );
+    
+    return {
+      ...stat,
+      progress: matchingCategory?.progress || 0
+    };
+  });
   
   return (
     <Card className="border-mono-light shadow-sm">

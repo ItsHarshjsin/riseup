@@ -31,6 +31,23 @@ export const useDashboard = () => {
     enabled: !!user?.id,
   });
 
+  // Fetch category mastery
+  const { data: categoryMastery = [], isLoading: categoryMasteryLoading } = useQuery({
+    queryKey: ['categoryMastery'],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      
+      const { data, error } = await supabase
+        .from('category_mastery')
+        .select('*')
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user?.id,
+  });
+
   // Add new task
   const { mutate: addTask } = useMutation({
     mutationFn: async (newTask: { title: string; description: string; points: number }) => {
@@ -83,6 +100,7 @@ export const useDashboard = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       queryClient.invalidateQueries({ queryKey: ['userProfile'] });
+      queryClient.invalidateQueries({ queryKey: ['categoryMastery'] });
       toast({
         title: 'Task updated',
         description: 'Task status has been updated successfully',
@@ -104,5 +122,7 @@ export const useDashboard = () => {
     toggleTask,
     addTask,
     isLoading: tasksLoading,
+    categoryMastery,
+    categoryMasteryLoading
   };
 };
