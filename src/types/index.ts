@@ -30,6 +30,11 @@ export interface Task {
   points: number;
   completed: boolean;
   date: Date;
+  task_date?: string;
+  completed_at?: string | null;
+  user_id: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Challenge {

@@ -79,10 +79,12 @@ export type Database = {
         Row: {
           category: string
           completed: boolean
+          completed_at: string | null
           created_at: string
           description: string | null
           id: string
           points: number
+          task_date: string | null
           title: string
           updated_at: string
           user_id: string
@@ -90,10 +92,12 @@ export type Database = {
         Insert: {
           category: string
           completed?: boolean
+          completed_at?: string | null
           created_at?: string
           description?: string | null
           id?: string
           points?: number
+          task_date?: string | null
           title: string
           updated_at?: string
           user_id: string
@@ -101,10 +105,12 @@ export type Database = {
         Update: {
           category?: string
           completed?: boolean
+          completed_at?: string | null
           created_at?: string
           description?: string | null
           id?: string
           points?: number
+          task_date?: string | null
           title?: string
           updated_at?: string
           user_id?: string

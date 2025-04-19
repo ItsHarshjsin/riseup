@@ -46,9 +46,10 @@ const DailyTasks = () => {
   };
 
   // Filter tasks based on selected date
-  const filteredTasks = tasks.filter(task => 
-    task.task_date && isSameDay(new Date(task.task_date), selectedDate)
-  );
+  const filteredTasks = tasks.filter(task => {
+    if (!task.task_date) return false;
+    return isSameDay(new Date(task.task_date), selectedDate);
+  });
 
   // Check if tasks can be added/completed for the selected date
   const isSelectedDateToday = isSameDay(selectedDate, new Date());

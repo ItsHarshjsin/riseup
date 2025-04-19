@@ -99,7 +99,7 @@ export const useDashboard = () => {
       
       // Check if this task is for today
       const today = format(new Date(), 'yyyy-MM-dd');
-      if (task.task_date !== today && !task.completed) {
+      if ((task.task_date !== today) && !task.completed) {
         throw new Error('Tasks can only be completed on their assigned day');
       }
 

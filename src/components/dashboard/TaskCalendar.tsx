@@ -35,7 +35,7 @@ const TaskCalendar: React.FC = () => {
       if (error) throw error;
       
       // Group tasks by completion date
-      const tasksByDate = (data || []).reduce((acc: Record<string, number>, task) => {
+      const tasksByDate = (data || []).reduce((acc: Record<string, number>, task: any) => {
         if (task.completed_at) {
           const dateKey = format(new Date(task.completed_at), 'yyyy-MM-dd');
           acc[dateKey] = (acc[dateKey] || 0) + 1;
