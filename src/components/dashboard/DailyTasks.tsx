@@ -1,13 +1,12 @@
 
-import React, { useState } from "react";
+import React from "react";
 import { CheckCircle, Circle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Task } from "@/types";
-import { dailyTaskTemplates } from "@/data/mockData";
+import { useDashboard } from "@/hooks/useDashboard";
 
 const DailyTasks: React.FC = () => {
-  const [selectedCategory, setSelectedCategory] = useState<string>("productivity");
-  const [tasks, setTasks] = useState<Task[]>(dailyTaskTemplates.productivity);
+  const { tasks, selectedCategory, setSelectedCategory, toggleTask } = useDashboard();
   
   const categories = [
     { id: "productivity", label: "Productivity" },
@@ -18,19 +17,6 @@ const DailyTasks: React.FC = () => {
     { id: "social", label: "Social" },
   ];
   
-  const handleCategoryChange = (category: string) => {
-    setSelectedCategory(category);
-    setTasks(dailyTaskTemplates[category as keyof typeof dailyTaskTemplates]);
-  };
-  
-  const toggleTaskCompletion = (taskId: string) => {
-    setTasks(tasks.map(task => 
-      task.id === taskId 
-        ? { ...task, completed: !task.completed } 
-        : task
-    ));
-  };
-  
   return (
     <Card className="border-mono-light shadow-sm">
       <CardHeader className="border-b border-mono-light">
@@ -40,7 +26,7 @@ const DailyTasks: React.FC = () => {
         {categories.map(category => (
           <button
             key={category.id}
-            onClick={() => handleCategoryChange(category.id)}
+            onClick={() => setSelectedCategory(category.id)}
             className={`px-4 py-2 mx-1 text-sm font-medium whitespace-nowrap transition-colors ${
               selectedCategory === category.id
                 ? "border-b-2 border-mono-black"
@@ -59,7 +45,7 @@ const DailyTasks: React.FC = () => {
               className="p-4 flex items-center hover:bg-mono-lighter transition-colors"
             >
               <button 
-                onClick={() => toggleTaskCompletion(task.id)}
+                onClick={() => toggleTask(task.id)}
                 className="mr-3 text-mono-black hover:text-mono-gray transition-colors"
               >
                 {task.completed ? (

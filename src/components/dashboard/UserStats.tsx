@@ -3,19 +3,28 @@ import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Trophy, Target, Zap, Star } from "lucide-react";
-import { currentUser } from "@/data/mockData";
+import { useDashboard } from "@/hooks/useDashboard";
+import { useAuth } from "@/hooks/useAuth";
 
 const UserStats: React.FC = () => {
-  // Calculate level progress
-  const levelProgress = ((currentUser.points % 500) / 500) * 100;
+  const { user } = useAuth();
+  const { categoryMastery } = useDashboard();
   
-  // Create mock category stats
+  // Calculate level progress
+  const points = user?.points || 0;
+  const levelProgress = ((points % 500) / 500) * 100;
+  
   const categoryStats = [
-    { name: "Fitness", progress: 65, icon: <Trophy className="h-5 w-5" /> },
-    { name: "Learning", progress: 80, icon: <Zap className="h-5 w-5" /> },
-    { name: "Mindfulness", progress: 45, icon: <Star className="h-5 w-5" /> },
-    { name: "Productivity", progress: 72, icon: <Target className="h-5 w-5" /> },
-  ];
+    { name: "Fitness", icon: <Trophy className="h-5 w-5" /> },
+    { name: "Learning", icon: <Zap className="h-5 w-5" /> },
+    { name: "Mindfulness", icon: <Star className="h-5 w-5" /> },
+    { name: "Productivity", icon: <Target className="h-5 w-5" /> },
+  ].map(stat => ({
+    ...stat,
+    progress: categoryMastery.find(cm => 
+      cm.category.toLowerCase() === stat.name.toLowerCase()
+    )?.progress || 0
+  }));
   
   return (
     <Card className="border-mono-light shadow-sm">
@@ -25,12 +34,12 @@ const UserStats: React.FC = () => {
       <CardContent className="pt-4">
         <div className="mb-6">
           <div className="flex justify-between mb-2">
-            <div className="text-sm font-medium">Level {currentUser.level}</div>
-            <div className="text-sm font-medium">Level {currentUser.level + 1}</div>
+            <div className="text-sm font-medium">Level {user?.level || 1}</div>
+            <div className="text-sm font-medium">Level {(user?.level || 1) + 1}</div>
           </div>
           <Progress value={levelProgress} className="h-2 bg-mono-lighter" />
           <div className="text-xs text-mono-gray mt-2 text-center">
-            {Math.round(500 - (currentUser.points % 500))} points until next level
+            {Math.round(500 - (points % 500))} points until next level
           </div>
         </div>
         

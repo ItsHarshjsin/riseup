@@ -48,6 +48,69 @@ export type Database = {
         }
         Relationships: []
       }
+      category_mastery: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          progress: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          id?: string
+          progress?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          progress?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      daily_tasks: {
+        Row: {
+          category: string
+          completed: boolean
+          created_at: string
+          description: string | null
+          id: string
+          points: number
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category: string
+          completed?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          points?: number
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          completed?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          points?: number
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar: string | null
@@ -84,6 +147,33 @@ export type Database = {
           streak?: number
           updated_at?: string
           username?: string
+        }
+        Relationships: []
+      }
+      user_achievements: {
+        Row: {
+          description: string | null
+          icon: string | null
+          id: string
+          name: string
+          unlocked_at: string
+          user_id: string
+        }
+        Insert: {
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name: string
+          unlocked_at?: string
+          user_id: string
+        }
+        Update: {
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name?: string
+          unlocked_at?: string
+          user_id?: string
         }
         Relationships: []
       }
