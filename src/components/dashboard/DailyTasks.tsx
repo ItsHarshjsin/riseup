@@ -1,17 +1,19 @@
 
 import React, { useState } from "react";
-import { CheckCircle, Circle, Plus, X } from "lucide-react";
+import { CheckCircle, Circle, Plus } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Task } from "@/types";
+import { Textarea } from "@/components/ui/textarea";
 import { useDashboard } from "@/hooks/useDashboard";
+import { useToast } from "@/hooks/use-toast";
 
-const DailyTasks: React.FC = () => {
+const DailyTasks = () => {
   const { tasks, selectedCategory, setSelectedCategory, toggleTask, addTask } = useDashboard();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { toast } = useToast();
   const [newTask, setNewTask] = useState({
     title: "",
     description: "",
@@ -28,13 +30,20 @@ const DailyTasks: React.FC = () => {
   ];
 
   const handleAddTask = () => {
-    if (!newTask.title.trim()) return;
+    if (!newTask.title.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a task title",
+        variant: "destructive",
+      });
+      return;
+    }
     
     addTask(newTask);
     setNewTask({ title: "", description: "", points: 10 });
     setIsDialogOpen(false);
   };
-  
+
   return (
     <Card className="border-mono-light shadow-sm">
       <CardHeader className="border-b border-mono-light flex flex-row items-center justify-between">
@@ -62,22 +71,11 @@ const DailyTasks: React.FC = () => {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="description">Description</Label>
-                <Input 
+                <Textarea 
                   id="description" 
                   value={newTask.description}
                   onChange={(e) => setNewTask({...newTask, description: e.target.value})}
                   placeholder="Enter task description"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="points">Points (default: 10)</Label>
-                <Input 
-                  id="points" 
-                  type="number"
-                  value={newTask.points}
-                  onChange={(e) => setNewTask({...newTask, points: parseInt(e.target.value) || 10})}
-                  min={1}
-                  max={100}
                 />
               </div>
               <div className="pt-4 flex justify-end gap-2">
@@ -90,6 +88,7 @@ const DailyTasks: React.FC = () => {
           </DialogContent>
         </Dialog>
       </CardHeader>
+
       <div className="border-b border-mono-light px-4 py-2 flex overflow-x-auto">
         {categories.map(category => (
           <button
@@ -105,6 +104,7 @@ const DailyTasks: React.FC = () => {
           </button>
         ))}
       </div>
+
       <CardContent className="p-0">
         {tasks.length === 0 ? (
           <div className="py-8 text-center text-mono-gray">
@@ -138,7 +138,9 @@ const DailyTasks: React.FC = () => {
                   <h3 className={`font-medium ${task.completed ? "line-through text-mono-gray" : ""}`}>
                     {task.title}
                   </h3>
-                  <p className="text-sm text-mono-gray">{task.description}</p>
+                  {task.description && (
+                    <p className="text-sm text-mono-gray">{task.description}</p>
+                  )}
                 </div>
                 <div className="ml-4 text-sm font-semibold bg-mono-lighter px-2 py-1 rounded-full">
                   {task.points} pts

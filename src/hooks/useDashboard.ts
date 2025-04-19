@@ -1,9 +1,9 @@
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Task } from '@/types';
+import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 
 export const useDashboard = () => {
@@ -24,23 +24,6 @@ export const useDashboard = () => {
         .eq('category', selectedCategory)
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!user?.id,
-  });
-
-  // Fetch category mastery
-  const { data: categoryMastery = [], isLoading: categoryLoading } = useQuery({
-    queryKey: ['category_mastery'],
-    queryFn: async () => {
-      if (!user?.id) return [];
-      
-      const { data, error } = await supabase
-        .from('category_mastery')
-        .select('*')
-        .eq('user_id', user.id);
 
       if (error) throw error;
       return data || [];
@@ -75,7 +58,7 @@ export const useDashboard = () => {
         description: 'Your new task has been added successfully',
       });
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast({
         title: 'Error adding task',
         description: error.message,
@@ -99,14 +82,13 @@ export const useDashboard = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      queryClient.invalidateQueries({ queryKey: ['category_mastery'] });
       queryClient.invalidateQueries({ queryKey: ['userProfile'] });
       toast({
         title: 'Task updated',
-        description: 'Your task has been updated successfully',
+        description: 'Task status has been updated successfully',
       });
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast({
         title: 'Error updating task',
         description: error.message,
@@ -117,11 +99,10 @@ export const useDashboard = () => {
 
   return {
     tasks,
-    categoryMastery,
     selectedCategory,
     setSelectedCategory,
     toggleTask,
     addTask,
-    isLoading: tasksLoading || categoryLoading,
+    isLoading: tasksLoading,
   };
 };
