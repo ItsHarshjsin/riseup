@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { CheckCircle, Circle, Plus } from "lucide-react";
+import { CheckCircle, Circle, Plus, Calendar } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,9 +9,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useDashboard } from "@/hooks/useDashboard";
 import { useToast } from "@/hooks/use-toast";
+import { format, isSameDay } from "date-fns";
 
 const DailyTasks = () => {
-  const { tasks, selectedCategory, setSelectedCategory, toggleTask, addTask } = useDashboard();
+  const { tasks, selectedCategory, setSelectedCategory, selectedDate, toggleTask, addTask } = useDashboard();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
   const [newTask, setNewTask] = useState({
@@ -44,13 +45,33 @@ const DailyTasks = () => {
     setIsDialogOpen(false);
   };
 
+  // Filter tasks based on selected date
+  const filteredTasks = tasks.filter(task => 
+    task.task_date && isSameDay(new Date(task.task_date), selectedDate)
+  );
+
+  // Check if tasks can be added/completed for the selected date
+  const isSelectedDateToday = isSameDay(selectedDate, new Date());
+
   return (
     <Card className="border-mono-light shadow-sm">
       <CardHeader className="border-b border-mono-light flex flex-row items-center justify-between">
-        <CardTitle className="text-xl font-bold">Daily Tasks</CardTitle>
+        <div className="flex items-center">
+          <CardTitle className="text-xl font-bold">
+            Daily Tasks
+          </CardTitle>
+          <span className="ml-2 text-sm text-mono-gray">
+            {format(selectedDate, 'MMMM d, yyyy')}
+          </span>
+        </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button size="sm" variant="outline" className="flex items-center gap-1">
+            <Button 
+              size="sm" 
+              variant="outline" 
+              className="flex items-center gap-1"
+              disabled={!isSelectedDateToday}
+            >
               <Plus className="h-4 w-4" />
               <span>Add Task</span>
             </Button>
@@ -76,6 +97,16 @@ const DailyTasks = () => {
                   value={newTask.description}
                   onChange={(e) => setNewTask({...newTask, description: e.target.value})}
                   placeholder="Enter task description"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="points">Points (default: 10)</Label>
+                <Input 
+                  id="points" 
+                  type="number"
+                  value={newTask.points}
+                  onChange={(e) => setNewTask({...newTask, points: parseInt(e.target.value) || 10})}
+                  placeholder="Enter points value"
                 />
               </div>
               <div className="pt-4 flex justify-end gap-2">
@@ -106,20 +137,28 @@ const DailyTasks = () => {
       </div>
 
       <CardContent className="p-0">
-        {tasks.length === 0 ? (
+        {!isSelectedDateToday && (
+          <div className="bg-mono-lighter p-2 text-sm text-center text-mono-gray">
+            Tasks can only be added for today
+          </div>
+        )}
+        
+        {filteredTasks.length === 0 ? (
           <div className="py-8 text-center text-mono-gray">
-            <p>No tasks in this category yet</p>
-            <Button 
-              variant="link" 
-              onClick={() => setIsDialogOpen(true)}
-              className="mt-2"
-            >
-              Add your first task
-            </Button>
+            <p>No tasks in this category for {format(selectedDate, 'MMMM d, yyyy')}</p>
+            {isSelectedDateToday && (
+              <Button 
+                variant="link" 
+                onClick={() => setIsDialogOpen(true)}
+                className="mt-2"
+              >
+                Add your first task
+              </Button>
+            )}
           </div>
         ) : (
           <ul className="divide-y divide-mono-light">
-            {tasks.map((task) => (
+            {filteredTasks.map((task) => (
               <li 
                 key={task.id}
                 className="p-4 flex items-center hover:bg-mono-lighter transition-colors"
@@ -127,6 +166,7 @@ const DailyTasks = () => {
                 <button 
                   onClick={() => toggleTask(task.id)}
                   className="mr-3 text-mono-black hover:text-mono-gray transition-colors"
+                  disabled={!isSelectedDateToday && !task.completed}
                 >
                   {task.completed ? (
                     <CheckCircle className="h-6 w-6 fill-mono-black" />

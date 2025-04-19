@@ -5,16 +5,21 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { format } from 'date-fns';
 
 export const useDashboard = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedCategory, setSelectedCategory] = useState<string>('productivity');
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const { user } = useAuth();
+
+  // Format the selected date to ISO string for database queries
+  const formattedDate = format(selectedDate, 'yyyy-MM-dd');
 
   // Fetch tasks
   const { data: tasks = [], isLoading: tasksLoading } = useQuery({
-    queryKey: ['tasks', selectedCategory],
+    queryKey: ['tasks', selectedCategory, formattedDate],
     queryFn: async () => {
       if (!user?.id) return [];
       
@@ -62,7 +67,9 @@ export const useDashboard = () => {
             description: newTask.description,
             category: selectedCategory,
             points: newTask.points || 10,
-            completed: false
+            completed: false,
+            created_at: new Date().toISOString(),
+            task_date: formattedDate
           }
         ]);
 
@@ -89,10 +96,22 @@ export const useDashboard = () => {
     mutationFn: async (taskId: string) => {
       const task = tasks.find(t => t.id === taskId);
       if (!task) throw new Error('Task not found');
+      
+      // Check if this task is for today
+      const today = format(new Date(), 'yyyy-MM-dd');
+      if (task.task_date !== today && !task.completed) {
+        throw new Error('Tasks can only be completed on their assigned day');
+      }
+
+      const completed = !task.completed;
+      const completed_at = completed ? new Date().toISOString() : null;
 
       const { error } = await supabase
         .from('daily_tasks')
-        .update({ completed: !task.completed })
+        .update({ 
+          completed,
+          completed_at
+        })
         .eq('id', taskId);
 
       if (error) throw error;
@@ -101,6 +120,7 @@ export const useDashboard = () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
       queryClient.invalidateQueries({ queryKey: ['userProfile'] });
       queryClient.invalidateQueries({ queryKey: ['categoryMastery'] });
+      queryClient.invalidateQueries({ queryKey: ['completedTasks'] });
       toast({
         title: 'Task updated',
         description: 'Task status has been updated successfully',
@@ -119,6 +139,8 @@ export const useDashboard = () => {
     tasks,
     selectedCategory,
     setSelectedCategory,
+    selectedDate,
+    setSelectedDate,
     toggleTask,
     addTask,
     isLoading: tasksLoading,
