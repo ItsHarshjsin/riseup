@@ -27,15 +27,22 @@ const StatsPage: React.FC = () => {
     queryFn: async () => {
       if (!user?.id) return [];
       
+      // Use raw SQL query with count aggregation since groupBy is not directly available
       const { data, error } = await supabase
         .from('daily_tasks')
-        .select('category, count(*)')
+        .select('category, count')
         .eq('user_id', user.id)
         .eq('completed', true)
-        .groupBy('category');
+        .select('category, count(*)')
+        .filter('completed', 'eq', true)
+        .filter('user_id', 'eq', user.id);
         
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching category stats:", error);
+        return [];
+      }
       
+      // Convert the data to the required format
       return data.map(item => ({
         name: item.category.charAt(0).toUpperCase() + item.category.slice(1),
         value: parseInt(item.count)
@@ -118,30 +125,7 @@ const StatsPage: React.FC = () => {
         });
       }
       
-      try {
-        // Try to get monthly points via RPC
-        const { data: monthlyPoints, error } = await supabase.rpc(
-          'get_monthly_points',
-          { user_id_param: user.id }
-        );
-        
-        if (!error && Array.isArray(monthlyPoints)) {
-          return months.map(month => {
-            const monthData = monthlyPoints.find(mp => 
-              mp.month === month.monthNum && mp.year === month.year
-            );
-            
-            return {
-              month: month.month,
-              points: monthData?.points || 0
-            } as MonthlyStat;
-          });
-        }
-      } catch (e) {
-        console.error("Error with RPC:", e);
-      }
-      
-      // Fallback: aggregate points manually
+      // Let's use a manual aggregation approach instead of the RPC for now
       const { data: tasksData, error: tasksError } = await supabase
         .from('daily_tasks')
         .select('task_date, points, completed')
@@ -149,6 +133,7 @@ const StatsPage: React.FC = () => {
         .eq('completed', true);
       
       if (tasksError) {
+        console.error("Error fetching monthly stats:", tasksError);
         // Return dummy data if both methods fail
         return months.map((month, index) => ({
           month: month.month,
@@ -162,8 +147,9 @@ const StatsPage: React.FC = () => {
           .filter(task => {
             if (!task.task_date) return false;
             const taskDate = new Date(task.task_date);
-            return taskDate.getMonth() + 1 === month.monthNum && 
-                  taskDate.getFullYear() === month.year;
+            const taskMonth = taskDate.getMonth() + 1; // JS months are 0-11
+            const taskYear = taskDate.getFullYear();
+            return taskMonth === month.monthNum && taskYear === month.year;
           })
           .reduce((sum, task) => sum + (task.points || 0), 0);
         

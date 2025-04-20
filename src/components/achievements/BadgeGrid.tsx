@@ -21,7 +21,7 @@ import {
 import { Badge, Category } from "@/types";
 
 interface BadgeGridProps {
-  allBadges: any[]; // Allow any badge array format
+  allBadges: any[]; // All available badges
   userBadges: Badge[];
   showLocked?: boolean;
 }

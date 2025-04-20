@@ -29,7 +29,7 @@ const AchievementsPage: React.FC = () => {
           <div className="lg:col-span-2 space-y-6">
             <BadgeGrid 
               userBadges={userBadges} 
-              badges={allBadges}
+              allBadges={allBadges}
             />
           </div>
           

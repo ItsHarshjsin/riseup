@@ -19,7 +19,8 @@ export const useAchievements = () => {
       if (error) throw error;
       return data.map(badge => ({
         ...badge,
-        icon: badge.icon || 'award' // Provide default icon if none exists
+        // Add default icon if none exists in database
+        icon: 'award' // Default icon
       })) || [];
     }
   });
@@ -45,7 +46,7 @@ export const useAchievements = () => {
         ...item.badges,
         unlocked_at: item.unlocked_at,
         // Set a default icon if none exists
-        icon: item.badges.icon || 'award',
+        icon: 'award',
         id: item.badges.id,
         unlockedAt: new Date(item.unlocked_at)
       })) as Badge[];
