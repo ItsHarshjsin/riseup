@@ -6,6 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { format } from 'date-fns';
+import { Category } from '@/types';
 
 export const useDashboard = () => {
   const { toast } = useToast();
@@ -55,7 +56,7 @@ export const useDashboard = () => {
 
   // Add new task
   const { mutate: addTask } = useMutation({
-    mutationFn: async (newTask: { title: string; description: string; points: number }) => {
+    mutationFn: async (newTask: { title: string; description: string; points: number; category: Category }) => {
       if (!user?.id) throw new Error('User not authenticated');
       
       const { error } = await supabase
@@ -65,7 +66,7 @@ export const useDashboard = () => {
             user_id: user.id,
             title: newTask.title,
             description: newTask.description,
-            category: selectedCategory,
+            category: newTask.category || selectedCategory, // Use provided category or fallback to selected
             points: newTask.points || 10,
             completed: false,
             created_at: new Date().toISOString(),

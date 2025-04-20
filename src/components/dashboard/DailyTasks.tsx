@@ -4,7 +4,7 @@ import { CheckCircle, Circle, Plus, Calendar } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -43,9 +43,12 @@ const DailyTasks = () => {
       return;
     }
     
+    // Fix: Pass only the properties expected by the addTask function
     addTask({
-      ...newTask,
-      category: newTask.category
+      title: newTask.title,
+      description: newTask.description,
+      points: newTask.points,
+      category: newTask.category // This needs to be handled by the addTask function
     });
     setNewTask({ title: "", description: "", points: 10, category: "productivity" });
     setIsDialogOpen(false);
@@ -91,6 +94,7 @@ const DailyTasks = () => {
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Add New Task</DialogTitle>
+              <DialogDescription>Create a new task for today</DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-2">
               <div className="space-y-2">
