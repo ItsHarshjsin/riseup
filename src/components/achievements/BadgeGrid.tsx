@@ -21,8 +21,8 @@ import {
 import { Badge, Category } from "@/types";
 
 interface BadgeGridProps {
-  allBadges?: any[]; // Allow any badge array format
-  userBadges?: Badge[];
+  allBadges: any[]; // Allow any badge array format
+  userBadges: Badge[];
   showLocked?: boolean;
 }
 
@@ -124,7 +124,7 @@ const BadgeGrid: React.FC<BadgeGridProps> = ({
           
           {/* Show all badges that are not unlocked */}
           {showLocked && allBadges
-            .filter(badge => !userBadges.some(ub => ub.id === badge.id || ub.id === badge.badge_id))
+            .filter(badge => !userBadges.some(ub => ub.id === badge.id))
             .map((badge) => {
               const Icon = getBadgeIcon(badge.icon || 'award');
               

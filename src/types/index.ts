@@ -67,3 +67,22 @@ export type Category =
   | 'mindfulness'
   | 'creativity'
   | 'social';
+
+// Add new types for Stats page
+export interface CategoryStat {
+  name: string;
+  value: number;
+}
+
+export interface WeeklyStat {
+  day: string;
+  date: string;
+  tasks: number;
+  total: number;
+  points: number;
+}
+
+export interface MonthlyStat {
+  month: string;
+  points: number;
+}
