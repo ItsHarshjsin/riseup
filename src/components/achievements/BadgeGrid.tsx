@@ -19,15 +19,16 @@ import {
   LucideIcon
 } from "lucide-react";
 import { Badge, Category } from "@/types";
-import { currentUser } from "@/data/mockData";
 
 interface BadgeGridProps {
-  badges?: Badge[];
+  allBadges?: any[]; // Allow any badge array format
+  userBadges?: Badge[];
   showLocked?: boolean;
 }
 
 const BadgeGrid: React.FC<BadgeGridProps> = ({ 
-  badges = currentUser.badges,
+  allBadges = [],
+  userBadges = [],
   showLocked = true
 }) => {
   // Create some locked badges for UI showcase
@@ -99,8 +100,8 @@ const BadgeGrid: React.FC<BadgeGridProps> = ({
       </CardHeader>
       <CardContent className="pt-6">
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {badges.map((badge) => {
-            const Icon = getBadgeIcon(badge.icon);
+          {userBadges.map((badge) => {
+            const Icon = getBadgeIcon(badge.icon || 'award');
             
             return (
               <div 
@@ -121,9 +122,37 @@ const BadgeGrid: React.FC<BadgeGridProps> = ({
             );
           })}
           
-          {/* Show locked badges if enabled */}
-          {showLocked && lockedBadges.map((badge) => {
-            const Icon = getBadgeIcon(badge.icon);
+          {/* Show all badges that are not unlocked */}
+          {showLocked && allBadges
+            .filter(badge => !userBadges.some(ub => ub.id === badge.id || ub.id === badge.badge_id))
+            .map((badge) => {
+              const Icon = getBadgeIcon(badge.icon || 'award');
+              
+              return (
+                <div 
+                  key={badge.id}
+                  className="border border-mono-light rounded-lg p-4 text-center opacity-50 hover:opacity-70 transition-opacity"
+                >
+                  <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-mono-light text-mono-gray mb-3">
+                    <Icon className="h-6 w-6" />
+                  </div>
+                  <h3 className="font-medium text-mono-gray">{badge.name}</h3>
+                  <p className="text-xs text-mono-gray mt-1">{badge.description}</p>
+                  <BadgeComponent 
+                    className="mt-3 bg-mono-lighter text-mono-gray"
+                  >
+                    {badge.category}
+                  </BadgeComponent>
+                  <div className="text-xs text-mono-gray mt-2">
+                    Locked
+                  </div>
+                </div>
+              );
+            })}
+          
+          {/* If not a lot of badges, show some additional locked ones */}
+          {showLocked && allBadges.length < 3 && lockedBadges.map((badge) => {
+            const Icon = getBadgeIcon(badge.icon || 'award');
             
             return (
               <div 

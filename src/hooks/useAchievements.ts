@@ -41,6 +41,7 @@ export const useAchievements = () => {
       return (data || []).map(item => ({
         ...item.badges,
         unlocked_at: item.unlocked_at,
+        icon: item.badges.icon || 'award', // Provide a default icon if none exists
         id: item.id
       })) as Badge[];
     },

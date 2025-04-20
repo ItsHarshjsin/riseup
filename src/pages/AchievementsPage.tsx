@@ -34,7 +34,7 @@ const AchievementsPage: React.FC = () => {
           </div>
           
           <div className="space-y-6">
-            <Leaderboard users={leaderboard} />
+            <Leaderboard data={leaderboard} />
           </div>
         </div>
       </div>

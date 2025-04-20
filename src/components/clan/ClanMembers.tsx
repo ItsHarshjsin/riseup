@@ -69,7 +69,7 @@ const ClanMembers: React.FC<ClanMembersProps> = ({
                   </Avatar>
                   <div className="ml-4 flex-1">
                     <div className="font-medium">{member.username}</div>
-                    <div className="text-xs text-mono-gray">Level {member.level} • {member.role}</div>
+                    <div className="text-xs text-mono-gray">Level {member.level} • {member.role || 'Member'}</div>
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="flex items-center gap-1 text-sm">

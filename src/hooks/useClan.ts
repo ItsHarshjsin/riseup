@@ -90,6 +90,10 @@ export const useClan = () => {
           ...profile,
           role: membership?.role,
           joined_at: membership?.joined_at,
+          // Add required fields for User type
+          badges: [],
+          completedTasks: [],
+          createdAt: new Date(profile.created_at)
         } as User;
       }).sort((a, b) => b.points - a.points);
     },
@@ -187,20 +191,18 @@ export const useClan = () => {
     }) => {
       if (!user?.id || !userClan?.id) throw new Error('User not authenticated or no clan selected');
       
-      // Create challenge
+      // Create challenge with string deadline instead of Date object
       const { data: newChallenge, error: challengeError } = await supabase
         .from('clan_challenges')
-        .insert([
-          {
-            clan_id: userClan.id,
-            title: challenge.title,
-            description: challenge.description,
-            category: challenge.category,
-            points: challenge.points,
-            created_by: user.id,
-            deadline: challenge.deadline
-          }
-        ])
+        .insert({
+          clan_id: userClan.id,
+          title: challenge.title,
+          description: challenge.description,
+          category: challenge.category,
+          points: challenge.points,
+          created_by: user.id,
+          deadline: challenge.deadline ? challenge.deadline.toISOString() : null
+        })
         .select()
         .single();
         

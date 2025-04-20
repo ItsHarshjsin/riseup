@@ -10,6 +10,7 @@ export interface User {
   completedTasks: Task[];
   clanId?: string;
   createdAt: Date;
+  role?: string; // Added role property for clan members
 }
 
 export interface Clan {
@@ -29,12 +30,12 @@ export interface Task {
   category: Category;
   points: number;
   completed: boolean;
-  date: Date;
+  date?: Date;
   task_date?: string;
   completed_at?: string | null;
   user_id: string;
   created_at: string;
-  updated_at: string;
+  updated_at?: string;
 }
 
 export interface Challenge {
@@ -53,9 +54,10 @@ export interface Badge {
   id: string;
   name: string;
   description: string;
-  icon: string;
+  icon?: string;
   category: Category;
-  unlockedAt: Date;
+  unlockedAt?: Date;
+  unlocked_at?: string;
 }
 
 export type Category = 
