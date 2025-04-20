@@ -17,7 +17,10 @@ export const useAchievements = () => {
         .order('name');
         
       if (error) throw error;
-      return data || [];
+      return data.map(badge => ({
+        ...badge,
+        icon: badge.icon || 'award' // Provide default icon if none exists
+      })) || [];
     }
   });
 

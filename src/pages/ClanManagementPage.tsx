@@ -34,7 +34,7 @@ const ClanManagementPage: React.FC = () => {
   }, [hasClan, isLoadingClan]);
   
   const handleClanCreated = (name: string, description: string) => {
-    createClan({ name, description });
+    createClan.mutate({ name, description });
     setActiveTab("invite");
   };
   
@@ -46,12 +46,12 @@ const ClanManagementPage: React.FC = () => {
     deadline: Date | null;
     participants: string[];
   }) => {
-    createChallenge(challenge);
+    createChallenge.mutate(challenge);
     setActiveTab("overview");
   };
   
   const handleInviteSent = (email: string) => {
-    inviteUser(email);
+    inviteUser.mutate(email);
   };
   
   if (isLoadingClan) {

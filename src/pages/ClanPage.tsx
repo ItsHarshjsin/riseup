@@ -13,7 +13,7 @@ const ClanPage: React.FC = () => {
   const navigate = useNavigate();
   const { 
     userClan, 
-    clanMembers, 
+    clanMembers,
     clanChallenges, 
     isLoadingClan, 
     isLoadingMembers,

@@ -49,28 +49,30 @@ export const useClan = () => {
       const { data: membersData, error: membersError } = await supabase
         .from('clan_members')
         .select(`
-          *,
-          profiles:user_id(*)
+          clan_id, role, user_id, 
+          profiles:user_id(id, username, avatar, level, points, streak, created_at)
         `)
         .eq('clan_id', membership.clan_id);
         
       if (membersError) throw membersError;
       
-      const members = membersData.map(member => {
-        const profile = member.profiles;
-        return {
-          id: profile.id,
-          username: profile.username,
-          avatar: profile.avatar || "",
-          level: profile.level || 1,
-          points: profile.points || 0,
-          streak: profile.streak || 0,
-          badges: [],
-          completedTasks: [],
-          createdAt: new Date(profile.created_at),
-          role: member.role
-        } as User;
-      });
+      const members = membersData
+        .filter(member => member.profiles)
+        .map(member => {
+          const profile = member.profiles as any;
+          return {
+            id: profile.id,
+            username: profile.username,
+            avatar: profile.avatar || "",
+            level: profile.level || 1,
+            points: profile.points || 0,
+            streak: profile.streak || 0,
+            badges: [],
+            completedTasks: [],
+            createdAt: new Date(profile.created_at),
+            role: member.role
+          } as User;
+        });
       
       return {
         id: clan.id,
@@ -84,6 +86,9 @@ export const useClan = () => {
     },
     enabled: !!user?.id,
   });
+  
+  // Check if user has a clan
+  const hasClan = !!userClan;
   
   // Fetch clan challenges
   const { data: clanChallenges = [], isLoading: isLoadingChallenges } = useQuery({
@@ -184,33 +189,52 @@ export const useClan = () => {
   
   // Create clan challenges
   const createChallenges = useMutation({
-    mutationFn: async (challenges: {
-      clan_id: string;
+    mutationFn: async (challenge: {
       title: string;
       description: string;
       category: string;
       points: number;
-      created_by: string;
-      deadline: Date;
-    }[]) => {
-      if (!user?.id) throw new Error('User not authenticated');
+      deadline: Date | null;
+      participants: string[];
+    }) => {
+      if (!user?.id || !userClan?.id) throw new Error('User not authenticated or no clan');
       
       setLoading(true);
       
       try {
-        // Format the deadline for each challenge
-        const formattedChallenges = challenges.map(challenge => ({
-          ...challenge,
-          deadline: formatDateForSupabase(challenge.deadline)
-        }));
+        // Format the challenge for Supabase
+        const formattedChallenge = {
+          clan_id: userClan.id,
+          title: challenge.title,
+          description: challenge.description,
+          category: challenge.category,
+          points: challenge.points,
+          created_by: user.id,
+          deadline: challenge.deadline ? formatDateForSupabase(challenge.deadline) : null
+        };
         
-        // Insert challenges in a batch
+        // Insert the challenge
         const { data, error } = await supabase
           .from('clan_challenges')
-          .insert(formattedChallenges)
+          .insert(formattedChallenge)
           .select();
           
         if (error) throw error;
+        
+        // Add participants if any
+        if (challenge.participants && challenge.participants.length > 0 && data && data[0]) {
+          const participantsData = challenge.participants.map(userId => ({
+            challenge_id: data[0].id,
+            user_id: userId,
+            completed: false
+          }));
+          
+          const { error: partError } = await supabase
+            .from('clan_challenge_participants')
+            .insert(participantsData);
+            
+          if (partError) throw partError;
+        }
         
         return data;
       } finally {
@@ -220,13 +244,13 @@ export const useClan = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clan-challenges'] });
       toast({ 
-        title: 'Challenges created',
-        description: 'The challenges have been created successfully.' 
+        title: 'Challenge created',
+        description: 'The challenge has been created successfully.' 
       });
     },
     onError: (error: Error) => {
       toast({ 
-        title: 'Error creating challenges',
+        title: 'Error creating challenge',
         description: error.message,
         variant: 'destructive'
       });
@@ -299,15 +323,57 @@ export const useClan = () => {
     }
   });
   
+  // Function to invite a user to the clan
+  const inviteUser = useMutation({
+    mutationFn: async (email: string) => {
+      if (!user?.id || !userClan?.id) throw new Error('User not authenticated or no clan');
+      
+      // Generate an invite code
+      const inviteCode = Math.random().toString(36).substring(2, 10);
+      
+      const { data, error } = await supabase
+        .from('clan_invites')
+        .insert({
+          clan_id: userClan.id,
+          invited_email: email,
+          invite_code: inviteCode,
+          expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days
+        })
+        .select();
+        
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      toast({ 
+        title: 'Invitation sent',
+        description: 'The invitation has been sent successfully.' 
+      });
+    },
+    onError: (error: Error) => {
+      toast({ 
+        title: 'Error sending invitation',
+        description: error.message,
+        variant: 'destructive'
+      });
+    }
+  });
+  
+  // Return all functions and data
   return {
     userClan,
     clanChallenges,
     isLoadingClan,
     isLoadingChallenges,
+    isLoadingMembers: isLoadingClan, // Use clan loading state for members too
     loading,
+    hasClan,
+    isCreating: loading,
     createClan,
-    createChallenges,
+    createChallenge: createChallenges,
     joinChallenge,
-    completeChallenge
+    completeChallenge,
+    inviteUser,
+    clanMembers: userClan?.members || []
   };
 };

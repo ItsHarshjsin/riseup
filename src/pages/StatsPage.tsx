@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Loader2 } from "lucide-react";
 import { format, subDays } from "date-fns";
+import { CategoryStat, MonthlyStat, WeeklyStat } from "@/types";
 
 const StatsPage: React.FC = () => {
   const { user } = useAuth();
@@ -28,18 +29,17 @@ const StatsPage: React.FC = () => {
       
       const { data, error } = await supabase
         .from('daily_tasks')
-        .select('category, count')
+        .select('category, count(*)')
         .eq('user_id', user.id)
         .eq('completed', true)
-        .group('category')
-        .count();
+        .groupBy('category');
         
       if (error) throw error;
       
       return data.map(item => ({
         name: item.category.charAt(0).toUpperCase() + item.category.slice(1),
         value: parseInt(item.count)
-      })) || [];
+      })) as CategoryStat[] || [];
     },
     enabled: !!user?.id
   });
@@ -84,7 +84,7 @@ const StatsPage: React.FC = () => {
           tasks: completed,
           total: Math.max(total, 1), // At least 1 to avoid division by zero
           points
-        };
+        } as WeeklyStat;
       });
     },
     enabled: !!user?.id
@@ -113,33 +113,64 @@ const StatsPage: React.FC = () => {
         
         months.push({
           month: format(new Date(year, month, 1), 'MMM'),
-          monthNum: month,
+          monthNum: month + 1, // SQL months are 1-12, JS are 0-11
           year
         });
       }
       
-      // Aggregate points by month from daily tasks
-      const { data: monthlyPoints, error } = await supabase.rpc('get_monthly_points', {
-        user_id_param: user.id
-      });
+      try {
+        // Try to get monthly points via RPC
+        const { data: monthlyPoints, error } = await supabase.rpc(
+          'get_monthly_points',
+          { user_id_param: user.id }
+        );
+        
+        if (!error && Array.isArray(monthlyPoints)) {
+          return months.map(month => {
+            const monthData = monthlyPoints.find(mp => 
+              mp.month === month.monthNum && mp.year === month.year
+            );
+            
+            return {
+              month: month.month,
+              points: monthData?.points || 0
+            } as MonthlyStat;
+          });
+        }
+      } catch (e) {
+        console.error("Error with RPC:", e);
+      }
       
-      if (error) {
-        // Fallback if RPC doesn't exist
+      // Fallback: aggregate points manually
+      const { data: tasksData, error: tasksError } = await supabase
+        .from('daily_tasks')
+        .select('task_date, points, completed')
+        .eq('user_id', user.id)
+        .eq('completed', true);
+      
+      if (tasksError) {
+        // Return dummy data if both methods fail
         return months.map((month, index) => ({
           month: month.month,
           points: 500 * (index + 1) + Math.floor(Math.random() * 300)
         }));
       }
       
+      // Process monthly data manually
       return months.map(month => {
-        const monthData = monthlyPoints?.find(mp => 
-          mp.month === month.monthNum && mp.year === month.year
-        );
+        const monthPoints = tasksData
+          .filter(task => {
+            if (!task.task_date) return false;
+            const taskDate = new Date(task.task_date);
+            return taskDate.getMonth() + 1 === month.monthNum && 
+                  taskDate.getFullYear() === month.year;
+          })
+          .reduce((sum, task) => sum + (task.points || 0), 0);
         
         return {
           month: month.month,
-          points: monthData?.points || 0
-        };
+          points: monthPoints
+        } as MonthlyStat;
       });
     },
     enabled: !!user?.id
