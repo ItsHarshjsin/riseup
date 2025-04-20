@@ -7,9 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useDashboard } from "@/hooks/useDashboard";
 import { useToast } from "@/hooks/use-toast";
 import { format, isSameDay } from "date-fns";
+import { Category } from "@/types";
 
 const DailyTasks = () => {
   const { tasks, selectedCategory, setSelectedCategory, selectedDate, toggleTask, addTask } = useDashboard();
@@ -18,7 +20,8 @@ const DailyTasks = () => {
   const [newTask, setNewTask] = useState({
     title: "",
     description: "",
-    points: 10
+    points: 10,
+    category: "productivity" as Category
   });
   
   const categories = [
@@ -40,15 +43,18 @@ const DailyTasks = () => {
       return;
     }
     
-    addTask(newTask);
-    setNewTask({ title: "", description: "", points: 10 });
+    addTask({
+      ...newTask,
+      category: newTask.category
+    });
+    setNewTask({ title: "", description: "", points: 10, category: "productivity" });
     setIsDialogOpen(false);
   };
 
-  // Filter tasks based on selected date
+  // Filter tasks based on selected date and category
   const filteredTasks = tasks.filter(task => {
     if (!task.task_date) return false;
-    return isSameDay(new Date(task.task_date), selectedDate);
+    return isSameDay(new Date(task.task_date), selectedDate) && task.category === selectedCategory;
   });
 
   // Check if tasks can be added/completed for the selected date
@@ -90,6 +96,24 @@ const DailyTasks = () => {
                   onChange={(e) => setNewTask({...newTask, title: e.target.value})}
                   placeholder="Enter task title"
                 />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="category">Category</Label>
+                <Select
+                  value={newTask.category}
+                  onValueChange={(value: Category) => setNewTask({...newTask, category: value})}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((category) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        {category.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="description">Description</Label>
