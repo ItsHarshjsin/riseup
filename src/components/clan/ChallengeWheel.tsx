@@ -9,36 +9,159 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { RotateCw, Check } from "lucide-react";
+import { RotateCw, Check, Loader2 } from "lucide-react";
 import { Task, Category } from "@/types";
-import { dailyTaskTemplates } from "@/data/mockData";
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 
-const ChallengeWheel: React.FC = () => {
+interface ChallengeWheelProps {
+  clanId?: string;
+}
+
+const ChallengeWheel: React.FC<ChallengeWheelProps> = ({ clanId }) => {
   const [spinning, setSpinning] = useState(false);
   const [challenges, setChallenges] = useState<Task[]>([]);
+  const { toast } = useToast();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
   
-  const spinWheel = () => {
-    setSpinning(true);
-    setTimeout(() => {
-      // Get random challenges from different categories
-      const categories = Object.keys(dailyTaskTemplates) as Category[];
-      const randomChallenges: Task[] = [];
+  const { mutate: acceptChallenge } = useMutation({
+    mutationFn: async (task: Task) => {
+      if (!user?.id) throw new Error('User not authenticated');
       
-      // Select 3 random categories
+      const { error } = await supabase
+        .from('daily_tasks')
+        .insert([
+          {
+            user_id: user.id,
+            title: task.title,
+            description: task.description,
+            category: task.category,
+            points: task.points,
+            completed: false,
+            task_date: new Date().toISOString().split('T')[0]
+          }
+        ]);
+        
+      if (error) throw error;
+      
+      return task;
+    },
+    onSuccess: (task) => {
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      setChallenges(prevChallenges => 
+        prevChallenges.filter(c => c.id !== task.id)
+      );
+      toast({
+        title: 'Challenge accepted',
+        description: `"${task.title}" has been added to your daily tasks.`,
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error accepting challenge',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+  
+  const spinWheel = async () => {
+    if (!clanId || !user) {
+      toast({
+        title: 'Error',
+        description: 'You need to be in a clan to spin the wheel',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    setSpinning(true);
+    
+    try {
+      // Get random challenges for different categories
+      const categories = ['productivity', 'fitness', 'learning', 'mindfulness', 'creativity', 'social'];
       const randomCategories = [...categories]
         .sort(() => Math.random() - 0.5)
         .slice(0, 3);
-      
-      // Get one random task from each category
-      randomCategories.forEach(category => {
-        const tasks = dailyTaskTemplates[category];
-        const randomTask = tasks[Math.floor(Math.random() * tasks.length)];
-        randomChallenges.push(randomTask);
+        
+      const promises = randomCategories.map(async (category) => {
+        const { data, error } = await supabase
+          .from('daily_tasks')
+          .select('*')
+          .eq('category', category)
+          .eq('user_id', user.id)
+          .limit(20);
+          
+        if (error) throw error;
+        
+        const filteredTasks = data.filter(task => !task.completed);
+        if (filteredTasks.length === 0) return null;
+        
+        // Select a random task
+        return filteredTasks[Math.floor(Math.random() * filteredTasks.length)];
       });
       
-      setChallenges(randomChallenges);
+      const results = await Promise.all(promises);
+      const randomTasks = results.filter(task => task !== null) as Task[];
+      
+      // If we don't have 3 tasks, create some default ones
+      if (randomTasks.length < 3) {
+        const defaultTasks = [
+          {
+            id: `temp-${Math.random()}`,
+            title: 'Complete a workout session',
+            description: 'Do at least 20 minutes of exercise',
+            category: 'fitness' as Category,
+            points: 20,
+            completed: false,
+            user_id: user.id,
+            created_at: new Date().toISOString(),
+            task_date: new Date().toISOString().split('T')[0]
+          },
+          {
+            id: `temp-${Math.random()}`,
+            title: 'Learn something new',
+            description: 'Spend 30 minutes learning a new skill',
+            category: 'learning' as Category,
+            points: 15,
+            completed: false,
+            user_id: user.id,
+            created_at: new Date().toISOString(),
+            task_date: new Date().toISOString().split('T')[0]
+          },
+          {
+            id: `temp-${Math.random()}`,
+            title: 'Meditate',
+            description: 'Practice 10 minutes of mindfulness',
+            category: 'mindfulness' as Category,
+            points: 10,
+            completed: false,
+            user_id: user.id,
+            created_at: new Date().toISOString(),
+            task_date: new Date().toISOString().split('T')[0]
+          }
+        ];
+        
+        // Add default tasks to fill up to 3
+        for (let i = randomTasks.length; i < 3; i++) {
+          randomTasks.push(defaultTasks[i]);
+        }
+      }
+      
+      setChallenges(randomTasks);
+    } catch (error) {
+      console.error('Error spinning wheel:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to spin the wheel',
+        variant: 'destructive',
+      });
+    } finally {
       setSpinning(false);
-    }, 1500);
+    }
   };
   
   const getCategoryColor = (category: Category) => {
@@ -54,6 +177,10 @@ const ChallengeWheel: React.FC = () => {
         return 'bg-mono-lighter text-mono-black';
     }
   };
+  
+  if (!clanId) {
+    return null;
+  }
   
   return (
     <Card className="border-mono-light shadow-sm">
@@ -72,7 +199,7 @@ const ChallengeWheel: React.FC = () => {
           >
             {spinning ? (
               <>
-                <RotateCw className="h-5 w-5 animate-spin" />
+                <Loader2 className="h-5 w-5 animate-spin" />
                 <span>Spinning...</span>
               </>
             ) : (
@@ -100,7 +227,12 @@ const ChallengeWheel: React.FC = () => {
                     <h4 className="font-medium">{challenge.title}</h4>
                     <p className="text-sm text-mono-gray">{challenge.description}</p>
                   </div>
-                  <Button size="sm" variant="outline" className="mt-1 h-8">
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    className="mt-1 h-8"
+                    onClick={() => acceptChallenge(challenge)}
+                  >
                     <Check className="h-4 w-4 mr-1" />
                     <span>Accept</span>
                   </Button>

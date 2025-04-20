@@ -25,26 +25,32 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { CalendarIcon, Users, Trophy, Target } from "lucide-react";
+import { CalendarIcon, Trophy, Loader2 } from "lucide-react";
 import { format, addDays } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
-import { Clan, User, Category } from "@/types";
-import { currentClan } from "@/data/mockData";
+import { User, Category } from "@/types";
 
 interface CreateChallengeProps {
-  clan?: Clan;
-  onCreated: () => void;
+  members: User[];
+  onCreated: (challenge: { 
+    title: string; 
+    description: string; 
+    category: string; 
+    points: number; 
+    deadline: Date | null;
+    participants: string[];
+  }) => void;
 }
 
 const CreateChallenge: React.FC<CreateChallengeProps> = ({
-  clan = currentClan,
+  members = [],
   onCreated,
 }) => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState<Category>("productivity");
   const [points, setPoints] = useState(100);
-  const [endDate, setEndDate] = useState<Date>(addDays(new Date(), 7));
+  const [deadline, setDeadline] = useState<Date | null>(addDays(new Date(), 7));
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
@@ -72,15 +78,18 @@ const CreateChallenge: React.FC<CreateChallengeProps> = ({
     
     setIsSubmitting(true);
     
-    // Simulate API call
-    setTimeout(() => {
-      toast({
-        title: "Success!",
-        description: `Your challenge "${title}" has been created.`,
+    try {
+      onCreated({
+        title,
+        description,
+        category,
+        points,
+        deadline,
+        participants: selectedMembers
       });
-      onCreated();
+    } finally {
       setIsSubmitting(false);
-    }, 1000);
+    }
   };
 
   const toggleMember = (memberId: string) => {
@@ -164,14 +173,14 @@ const CreateChallenge: React.FC<CreateChallengeProps> = ({
                   className="w-full justify-start text-left font-normal"
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {endDate ? format(endDate, "PPP") : "Select date"}
+                  {deadline ? format(deadline, "PPP") : "Select date"}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0">
                 <Calendar
                   mode="single"
-                  selected={endDate}
-                  onSelect={(date) => date && setEndDate(date)}
+                  selected={deadline}
+                  onSelect={setDeadline}
                   initialFocus
                   disabled={(date) => date < new Date()}
                 />
@@ -180,42 +189,43 @@ const CreateChallenge: React.FC<CreateChallengeProps> = ({
           </div>
           
           <div className="space-y-2">
-            <Label className="flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              Participants
-            </Label>
+            <Label>Participants</Label>
             <div className="bg-mono-lighter rounded-md p-4 space-y-2">
-              {clan.members.map((member: User) => {
-                const isSelected = selectedMembers.includes(member.id);
-                const initials = member.username
-                  .split(" ")
-                  .map((name) => name[0])
-                  .join("")
-                  .toUpperCase();
-                
-                return (
-                  <div 
-                    key={member.id}
-                    className={`flex items-center justify-between p-2 rounded-md cursor-pointer transition-colors ${
-                      isSelected ? "bg-mono-black text-mono-white" : "hover:bg-mono-light"
-                    }`}
-                    onClick={() => toggleMember(member.id)}
-                  >
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={member.avatar} alt={member.username} />
-                        <AvatarFallback className={isSelected ? "bg-mono-white text-mono-black" : "bg-mono-black text-mono-white"}>
-                          {initials}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>{member.username}</div>
+              {members.length === 0 ? (
+                <div className="text-center py-4">
+                  <p className="text-mono-gray">No clan members found</p>
+                </div>
+              ) : (
+                members.map((member) => {
+                  const isSelected = selectedMembers.includes(member.id);
+                  const initials = member.username
+                    ? member.username.split(" ").map((name) => name[0]).join("").toUpperCase()
+                    : 'U';
+                  
+                  return (
+                    <div 
+                      key={member.id}
+                      className={`flex items-center justify-between p-2 rounded-md cursor-pointer transition-colors ${
+                        isSelected ? "bg-mono-black text-mono-white" : "hover:bg-mono-light"
+                      }`}
+                      onClick={() => toggleMember(member.id)}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage src={member.avatar} alt={member.username} />
+                          <AvatarFallback className={isSelected ? "bg-mono-white text-mono-black" : "bg-mono-black text-mono-white"}>
+                            {initials}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>{member.username}</div>
+                      </div>
+                      <div className="text-xs">
+                        {isSelected ? "Selected" : ""}
+                      </div>
                     </div>
-                    <div className="text-xs">
-                      {isSelected ? "Selected" : ""}
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                })
+              )}
             </div>
           </div>
         </CardContent>
@@ -225,8 +235,17 @@ const CreateChallenge: React.FC<CreateChallengeProps> = ({
             className="w-full flex items-center gap-2"
             disabled={isSubmitting}
           >
-            <Trophy className="h-4 w-4" />
-            {isSubmitting ? "Creating..." : "Create Challenge"}
+            {isSubmitting ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Creating...</span>
+              </>
+            ) : (
+              <>
+                <Trophy className="h-4 w-4" />
+                <span>Create Challenge</span>
+              </>
+            )}
           </Button>
         </CardFooter>
       </form>

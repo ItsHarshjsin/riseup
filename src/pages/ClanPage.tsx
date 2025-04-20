@@ -6,12 +6,31 @@ import ClanOverview from "@/components/clan/ClanOverview";
 import ClanMembers from "@/components/clan/ClanMembers";
 import ChallengeWheel from "@/components/clan/ChallengeWheel";
 import { Button } from "@/components/ui/button";
-import { Settings } from "lucide-react";
-import { currentUser } from "@/data/mockData";
+import { Settings, Loader2 } from "lucide-react";
+import { useClan } from "@/hooks/useClan";
 
 const ClanPage: React.FC = () => {
   const navigate = useNavigate();
-  const hasNoClan = !currentUser.clanId;
+  const { 
+    userClan, 
+    clanMembers, 
+    clanChallenges, 
+    isLoadingClan, 
+    isLoadingMembers,
+    isLoadingChallenges,
+    hasClan 
+  } = useClan();
+  
+  if (isLoadingClan) {
+    return (
+      <Layout>
+        <div className="flex flex-col items-center justify-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin mb-4" />
+          <p className="text-mono-gray">Loading clan data...</p>
+        </div>
+      </Layout>
+    );
+  }
   
   return (
     <Layout>
@@ -24,11 +43,11 @@ const ClanPage: React.FC = () => {
             className="flex items-center gap-2"
           >
             <Settings className="h-4 w-4" />
-            <span>{hasNoClan ? "Create Clan" : "Manage Clan"}</span>
+            <span>{!hasClan ? "Create Clan" : "Manage Clan"}</span>
           </Button>
         </div>
         
-        {hasNoClan ? (
+        {!hasClan ? (
           <div className="bg-mono-lighter p-6 rounded-lg text-center space-y-4">
             <h2 className="text-xl font-medium">You're not part of a clan yet</h2>
             <p className="text-mono-gray max-w-md mx-auto">
@@ -44,12 +63,19 @@ const ClanPage: React.FC = () => {
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
-              <ClanOverview />
-              <ChallengeWheel />
+              <ClanOverview 
+                clan={userClan}
+                challenges={clanChallenges}
+                isLoading={isLoadingChallenges}
+              />
+              <ChallengeWheel clanId={userClan?.id} />
             </div>
             
             <div className="space-y-6">
-              <ClanMembers />
+              <ClanMembers 
+                members={clanMembers}
+                isLoading={isLoadingMembers}
+              />
             </div>
           </div>
         )}

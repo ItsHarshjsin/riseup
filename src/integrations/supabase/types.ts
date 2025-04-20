@@ -75,6 +75,185 @@ export type Database = {
         }
         Relationships: []
       }
+      clan_challenge_participants: {
+        Row: {
+          challenge_id: string
+          completed: boolean
+          completed_at: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          challenge_id: string
+          completed?: boolean
+          completed_at?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          challenge_id?: string
+          completed?: boolean
+          completed_at?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clan_challenge_participants_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "clan_challenges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clan_challenges: {
+        Row: {
+          category: string
+          clan_id: string
+          completed: boolean
+          created_at: string
+          created_by: string
+          deadline: string | null
+          description: string | null
+          id: string
+          points: number
+          title: string
+        }
+        Insert: {
+          category: string
+          clan_id: string
+          completed?: boolean
+          created_at?: string
+          created_by: string
+          deadline?: string | null
+          description?: string | null
+          id?: string
+          points?: number
+          title: string
+        }
+        Update: {
+          category?: string
+          clan_id?: string
+          completed?: boolean
+          created_at?: string
+          created_by?: string
+          deadline?: string | null
+          description?: string | null
+          id?: string
+          points?: number
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clan_challenges_clan_id_fkey"
+            columns: ["clan_id"]
+            isOneToOne: false
+            referencedRelation: "clans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clan_invites: {
+        Row: {
+          clan_id: string
+          created_at: string
+          expires_at: string
+          id: string
+          invite_code: string
+          invited_email: string
+          status: string
+        }
+        Insert: {
+          clan_id: string
+          created_at?: string
+          expires_at: string
+          id?: string
+          invite_code: string
+          invited_email: string
+          status?: string
+        }
+        Update: {
+          clan_id?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          invite_code?: string
+          invited_email?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clan_invites_clan_id_fkey"
+            columns: ["clan_id"]
+            isOneToOne: false
+            referencedRelation: "clans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clan_members: {
+        Row: {
+          clan_id: string
+          id: string
+          joined_at: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          clan_id: string
+          id?: string
+          joined_at?: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          clan_id?: string
+          id?: string
+          joined_at?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clan_members_clan_id_fkey"
+            columns: ["clan_id"]
+            isOneToOne: false
+            referencedRelation: "clans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clans: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          owner_id: string
+          points: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          owner_id: string
+          points?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          owner_id?: string
+          points?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       daily_tasks: {
         Row: {
           category: string

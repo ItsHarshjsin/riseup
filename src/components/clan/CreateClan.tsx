@@ -11,41 +11,25 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/hooks/use-toast";
+import { Loader2 } from "lucide-react";
 
 interface CreateClanProps {
-  onCreated: (clanName: string) => void;
+  onCreated: (name: string, description: string) => void;
+  isCreating?: boolean;
 }
 
-const CreateClan: React.FC<CreateClanProps> = ({ onCreated }) => {
+const CreateClan: React.FC<CreateClanProps> = ({ onCreated, isCreating = false }) => {
   const [clanName, setClanName] = useState("");
   const [description, setDescription] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const { toast } = useToast();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!clanName.trim()) {
-      toast({
-        title: "Error",
-        description: "Please enter a clan name",
-        variant: "destructive",
-      });
       return;
     }
     
-    setIsSubmitting(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      toast({
-        title: "Success!",
-        description: `Your clan "${clanName}" has been created.`,
-      });
-      onCreated(clanName);
-      setIsSubmitting(false);
-    }, 1000);
+    onCreated(clanName, description);
   };
 
   return (
@@ -80,10 +64,17 @@ const CreateClan: React.FC<CreateClanProps> = ({ onCreated }) => {
         <CardFooter className="border-t border-mono-light pt-4">
           <Button 
             type="submit" 
-            className="w-full"
-            disabled={isSubmitting}
+            className="w-full flex items-center gap-2"
+            disabled={isCreating}
           >
-            {isSubmitting ? "Creating..." : "Create Clan"}
+            {isCreating ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Creating...</span>
+              </>
+            ) : (
+              "Create Clan"
+            )}
           </Button>
         </CardFooter>
       </form>

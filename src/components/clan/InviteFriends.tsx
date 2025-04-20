@@ -10,15 +10,16 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Send, Copy, Check, Plus, X } from "lucide-react";
+import { Send, Copy, Check, Plus, X, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 
 interface InviteFriendsProps {
   clanName: string;
+  onInvite: (email: string) => void;
 }
 
-const InviteFriends: React.FC<InviteFriendsProps> = ({ clanName }) => {
+const InviteFriends: React.FC<InviteFriendsProps> = ({ clanName, onInvite }) => {
   const [email, setEmail] = useState("");
   const [emails, setEmails] = useState<string[]>([]);
   const [isCopied, setIsCopied] = useState(false);
@@ -75,15 +76,17 @@ const InviteFriends: React.FC<InviteFriendsProps> = ({ clanName }) => {
     
     setIsSending(true);
     
-    // Simulate API call
-    setTimeout(() => {
-      toast({
-        title: "Invitations Sent!",
-        description: `${emails.length} invitation${emails.length > 1 ? 's' : ''} sent successfully.`,
+    try {
+      // Send invites one by one
+      emails.forEach(email => {
+        onInvite(email);
       });
+      
+      // Clear emails after sending
       setEmails([]);
+    } finally {
       setIsSending(false);
-    }, 1500);
+    }
   };
 
   return (
@@ -164,8 +167,17 @@ const InviteFriends: React.FC<InviteFriendsProps> = ({ clanName }) => {
           onClick={handleSendInvites}
           disabled={emails.length === 0 || isSending}
         >
-          <Send className="h-4 w-4" />
-          {isSending ? "Sending..." : "Send Invitations"}
+          {isSending ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span>Sending...</span>
+            </>
+          ) : (
+            <>
+              <Send className="h-4 w-4" />
+              <span>Send Invitations</span>
+            </>
+          )}
         </Button>
       </CardFooter>
     </Card>

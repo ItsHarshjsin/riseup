@@ -1,14 +1,23 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import Layout from "@/components/layout/Layout";
 import DailyTasks from "@/components/dashboard/DailyTasks";
 import TaskCalendar from "@/components/dashboard/TaskCalendar";
 import UserStats from "@/components/dashboard/UserStats";
 import AchievementSummary from "@/components/dashboard/AchievementSummary";
 import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
 
 const Dashboard = () => {
   const { user, loading } = useAuth();
+  const navigate = useNavigate();
+
+  // Redirect to auth page if not logged in
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate('/auth');
+    }
+  }, [user, loading, navigate]);
 
   if (loading) {
     return (
@@ -23,15 +32,7 @@ const Dashboard = () => {
   }
 
   if (!user) {
-    return (
-      <Layout>
-        <div className="flex items-center justify-center h-96">
-          <div className="text-center">
-            <p className="text-xl text-mono-gray">Please log in to view your dashboard</p>
-          </div>
-        </div>
-      </Layout>
-    );
+    return null; // Will redirect via useEffect
   }
 
   return (

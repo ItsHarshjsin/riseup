@@ -1,31 +1,69 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Layout from "@/components/layout/Layout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { currentClan, currentUser } from "@/data/mockData";
 import ClanMembers from "@/components/clan/ClanMembers";
 import CreateClan from "@/components/clan/CreateClan";
 import InviteFriends from "@/components/clan/InviteFriends";
 import CreateChallenge from "@/components/clan/CreateChallenge";
-import { Users, UserPlus, Trophy, Home } from "lucide-react";
+import { Users, UserPlus, Trophy, Home, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { useClan } from "@/hooks/useClan";
 
 const ClanManagementPage: React.FC = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("overview");
-  const [hasClan, setHasClan] = useState(!!currentUser.clanId);
-  const [clanName, setClanName] = useState(currentClan?.name || "");
+  const { 
+    userClan, 
+    clanMembers, 
+    isLoadingClan, 
+    isLoadingMembers,
+    createClan,
+    createChallenge,
+    inviteUser,
+    isCreating,
+    hasClan
+  } = useClan();
   
-  const handleClanCreated = (name: string) => {
-    setHasClan(true);
-    setClanName(name);
+  // Set initial active tab based on clan status
+  useEffect(() => {
+    if (!hasClan && !isLoadingClan) {
+      setActiveTab("create");
+    }
+  }, [hasClan, isLoadingClan]);
+  
+  const handleClanCreated = (name: string, description: string) => {
+    createClan({ name, description });
     setActiveTab("invite");
   };
   
-  const handleChallengeCreated = () => {
+  const handleChallengeCreated = (challenge: { 
+    title: string; 
+    description: string; 
+    category: string; 
+    points: number; 
+    deadline: Date | null;
+    participants: string[];
+  }) => {
+    createChallenge(challenge);
     setActiveTab("overview");
   };
+  
+  const handleInviteSent = (email: string) => {
+    inviteUser(email);
+  };
+  
+  if (isLoadingClan) {
+    return (
+      <Layout>
+        <div className="flex flex-col items-center justify-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin mb-4" />
+          <p className="text-mono-gray">Loading clan data...</p>
+        </div>
+      </Layout>
+    );
+  }
   
   return (
     <Layout>
@@ -87,7 +125,7 @@ const ClanManagementPage: React.FC = () => {
             <TabsContent value="overview" className="m-0">
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-2">
-                  <ClanMembers />
+                  <ClanMembers members={clanMembers} isLoading={isLoadingMembers} />
                 </div>
                 <div>
                   {/* Maybe add clan stats or challenge progress here */}
@@ -97,19 +135,28 @@ const ClanManagementPage: React.FC = () => {
             
             <TabsContent value="invite" className="m-0">
               <div className="max-w-md mx-auto">
-                <InviteFriends clanName={clanName} />
+                <InviteFriends 
+                  clanName={userClan?.name || ""} 
+                  onInvite={handleInviteSent}
+                />
               </div>
             </TabsContent>
             
             <TabsContent value="challenge" className="m-0">
               <div className="max-w-2xl mx-auto">
-                <CreateChallenge onCreated={handleChallengeCreated} />
+                <CreateChallenge 
+                  members={clanMembers} 
+                  onCreated={handleChallengeCreated}
+                />
               </div>
             </TabsContent>
             
             <TabsContent value="create" className="m-0">
               <div className="max-w-md mx-auto">
-                <CreateClan onCreated={handleClanCreated} />
+                <CreateClan 
+                  onCreated={handleClanCreated}
+                  isCreating={isCreating}
+                />
               </div>
             </TabsContent>
           </div>
