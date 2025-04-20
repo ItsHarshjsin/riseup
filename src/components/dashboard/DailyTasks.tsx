@@ -49,6 +49,11 @@ const DailyTasks = () => {
     });
     setNewTask({ title: "", description: "", points: 10, category: "productivity" });
     setIsDialogOpen(false);
+    
+    toast({
+      title: "Task Added",
+      description: `New ${newTask.category} task added for today`,
+    });
   };
 
   // Filter tasks based on selected date and category
