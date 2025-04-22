@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import Layout from "@/components/layout/Layout";
+import * as React from "react";
+import { useState, useEffect } from "react";
 import ShareCard from "@/components/ShareCard";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -42,228 +42,222 @@ interface Profile extends Omit<DBProfile, 'tagline'> {
 const ProfilePage = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [badges, setBadges] = useState<any[]>([]);
-  const [categories, setCategories] = useState<string[]>([]);
   const [isEditing, setIsEditing] = useState(false);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [badges, setBadges] = useState<string[]>([]);
   const [editForm, setEditForm] = useState({
-    username: '',
-    bio: '',
-    tagline: '',
-    avatarUrl: null as string | null
+    username: "",
+    bio: "",
+    avatar: "",
+    tagline: "",
   });
-  const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
     if (user) {
       fetchProfile();
       fetchBadges();
-      fetchCategories();
     }
   }, [user]);
 
   const fetchProfile = async () => {
     if (!user) return;
-    
-    type ProfileResponse = {
-      data: DBProfile | null;
-      error: any;
-    };
 
-    const { data: dbProfile, error }: ProfileResponse = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', user.id)
-      .single();
-      
-    if (error || !dbProfile) {
+    const { data: profileData, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", user.id)
+      .single() as { data: DBProfile | null; error: any };
+
+    if (error) {
       toast({
         title: "Error fetching profile",
-        description: error?.message || "Profile not found",
-        variant: "destructive"
+        description: error.message,
+        variant: "destructive",
       });
       return;
     }
 
-    // Convert DBProfile to Profile, ensuring tagline has a default value
-    const profile: Profile = {
-      ...dbProfile,
-      tagline: dbProfile.tagline || 'Rising to new heights'
-    };
-    
-    setProfile(profile);
-    setEditForm({
-      username: profile.username,
-      bio: profile.bio || '',
-      tagline: profile.tagline,
-      avatarUrl: profile.avatar
-    });
+    if (profileData) {
+      const data: Profile = {
+        ...profileData,
+        tagline: profileData.tagline || ""
+      };
+      setProfile(data);
+      setEditForm({
+        username: data.username,
+        bio: data.bio || "",
+        avatar: data.avatar || "",
+        tagline: data.tagline,
+      });
+    }
   };
 
   const fetchBadges = async () => {
     if (!user) return;
-    
+
     const { data, error } = await supabase
-      .from('user_badges')
-      .select('badges(*)')
-      .eq('user_id', user.id);
-      
+      .from("user_badges")
+      .select("badge_id")
+      .eq("user_id", user.id);
+
     if (error) {
-      console.error('Error fetching badges:', error);
-      return;
-    }
-    
-    setBadges(data.map(item => item.badges));
-  };
-
-  const fetchCategories = async () => {
-    if (!user) return;
-    
-    const { data, error } = await supabase
-      .from('user_categories')
-      .select('categories(name)')
-      .eq('user_id', user.id);
-      
-    if (error) {
-      console.error('Error fetching categories:', error);
-      return;
-    }
-    
-    setCategories(data.map(item => item.categories.name));
-  };
-
-  const handleAvatarSelect = (avatarUrl: string) => {
-    setEditForm(prev => ({
-      ...prev,
-      avatarUrl
-    }));
-  };
-
-  const handleProfileUpdate = async () => {
-    if (!user || !profile) return;
-    
-    setIsUpdating(true);
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          username: editForm.username,
-          bio: editForm.bio,
-          tagline: editForm.tagline,
-          avatar: editForm.avatarUrl,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', user.id);
-        
-      if (error) throw error;
-      
       toast({
-        title: "Profile updated",
-        description: "Your profile has been updated successfully"
+        title: "Error fetching badges",
+        description: error.message,
+        variant: "destructive",
       });
-      
-      setIsEditing(false);
-      fetchProfile();
-    } catch (error: any) {
+      return;
+    }
+
+    setBadges(data.map((b) => b.badge_id));
+  };
+
+  const handleSave = async () => {
+    if (!user || !profile) return;
+
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        username: editForm.username,
+        bio: editForm.bio,
+        avatar: editForm.avatar,
+        tagline: editForm.tagline || null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", user.id);
+
+    if (error) {
       toast({
         title: "Error updating profile",
         description: error.message,
-        variant: "destructive"
+        variant: "destructive",
       });
-    } finally {
-      setIsUpdating(false);
+      return;
     }
+
+    setProfile(prev => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        username: editForm.username,
+        bio: editForm.bio,
+        avatar: editForm.avatar,
+        tagline: editForm.tagline || ""
+      };
+    });
+
+    setIsEditing(false);
+    toast({
+      title: "Profile updated",
+      description: "Your changes have been saved.",
+    });
   };
 
   if (!profile) {
-    return <Layout>Loading...</Layout>;
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-center">
+          <p className="text-xl text-mono-gray">Loading...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <Layout>
-      <div className="max-w-4xl mx-auto space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold">Your Profile</h1>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setIsEditing(true)}
-          >
-            <Pencil className="h-4 w-4" />
-          </Button>
-        </div>
-
-        <Card className="p-6">
-          <ShareCard
-            username={profile.username}
-            level={profile.level}
-            streak={profile.streak}
-            badges={badges.length}
-            tagline={profile.tagline}
-            profileImage={profile.avatar}
-            onUpdate={(data) => {
-              setEditForm(prev => ({ ...prev, ...data }));
-            }}
-          />
-        </Card>
-
-        <Dialog open={isEditing} onOpenChange={setIsEditing}>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>Edit Profile</DialogTitle>
-              <DialogDescription>
-                Update your profile information
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-6 py-4">
-              <AvatarSelector
-                currentAvatar={editForm.avatarUrl}
-                onAvatarSelect={handleAvatarSelect}
-              />
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Username</label>
-                <Input
-                  value={editForm.username}
-                  onChange={(e) => setEditForm(prev => ({
-                    ...prev,
-                    username: e.target.value
-                  }))}
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Tagline</label>
-                <Input
-                  value={editForm.tagline}
-                  onChange={(e) => setEditForm(prev => ({
-                    ...prev,
-                    tagline: e.target.value
-                  }))}
-                  placeholder="Add your personal tagline"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Bio</label>
-                <Textarea
-                  value={editForm.bio}
-                  onChange={(e) => setEditForm(prev => ({
-                    ...prev,
-                    bio: e.target.value
-                  }))}
-                  placeholder="Tell others about yourself"
-                />
-              </div>
-              <Button 
-                onClick={handleProfileUpdate} 
-                className="w-full"
-                disabled={isUpdating}
-              >
-                {isUpdating ? 'Saving...' : 'Save Changes'}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+    <div className="max-w-4xl mx-auto space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold">Your Profile</h1>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setIsEditing(true)}
+        >
+          <Pencil className="h-4 w-4" />
+        </Button>
       </div>
-    </Layout>
+
+      <Card className="p-6">
+        <ShareCard
+          username={profile.username}
+          level={profile.level}
+          streak={profile.streak}
+          badges={badges.length}
+          tagline={profile.tagline}
+          profileImage={profile.avatar}
+          onUpdate={(data) => {
+            setEditForm(prev => ({ ...prev, ...data }));
+          }}
+        />
+      </Card>
+
+      <Dialog open={isEditing} onOpenChange={setIsEditing}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Profile</DialogTitle>
+            <DialogDescription>
+              Make changes to your profile here. Click save when you're done.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Profile Picture</label>
+              <AvatarSelector
+                currentAvatar={editForm.avatar}
+                onSelect={(url) =>
+                  setEditForm((prev) => ({ ...prev, avatar: url }))
+                }
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Username</label>
+              <Input
+                value={editForm.username}
+                onChange={(e) =>
+                  setEditForm((prev) => ({
+                    ...prev,
+                    username: e.target.value,
+                  }))
+                }
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Tagline</label>
+              <Input
+                value={editForm.tagline}
+                onChange={(e) =>
+                  setEditForm((prev) => ({
+                    ...prev,
+                    tagline: e.target.value,
+                  }))
+                }
+                placeholder="A short description that appears on your share card"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Bio</label>
+              <Textarea
+                value={editForm.bio}
+                onChange={(e) =>
+                  setEditForm((prev) => ({ ...prev, bio: e.target.value }))
+                }
+                placeholder="Tell us about yourself"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-4">
+            <Button variant="outline" onClick={() => setIsEditing(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSave}>Save Changes</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 };
 

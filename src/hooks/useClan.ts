@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -6,9 +5,37 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { Clan, User, Challenge } from '@/types';
 
+// Database types
+type DBClanInvite = {
+  id: string;
+  clan_id: string;
+  invited_email: string;
+  invite_code: string;
+  status: 'pending' | 'accepted' | 'rejected';
+  created_at: string;
+  expires_at: string;
+};
+
+type DBPendingInvite = {
+  id: string;
+  clan_id: string;
+  invite_code: string;
+  created_at: string;
+  clans: {
+    name: string;
+    description: string | null;
+    points: number;
+  };
+};
+
 // Helper function to format the date for Supabase
 const formatDateForSupabase = (date: Date): string => {
   return date.toISOString();
+};
+
+// Helper function to generate invite code
+const generateInviteCode = () => {
+  return Math.random().toString(36).substring(2, 10);
 };
 
 export const useClan = () => {
@@ -323,31 +350,67 @@ export const useClan = () => {
     }
   });
   
-  // Function to invite a user to the clan
+  // Invite user to clan
   const inviteUser = useMutation({
     mutationFn: async (email: string) => {
       if (!user?.id || !userClan?.id) throw new Error('User not authenticated or no clan');
       
-      // Generate an invite code
-      const inviteCode = Math.random().toString(36).substring(2, 10);
+      setLoading(true);
       
-      const { data, error } = await supabase
-        .from('clan_invites')
-        .insert({
-          clan_id: userClan.id,
-          invited_email: email,
-          invite_code: inviteCode,
-          expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days
-        })
-        .select();
+      try {
+        // Check if user is already a member
+        const { data: existingMember, error: memberError } = await supabase
+          .from('clan_members')
+          .select('user_id')
+          .eq('clan_id', userClan.id)
+          .eq('user_id', (
+            await supabase
+              .from('profiles')
+              .select('id')
+              .eq('email', email)
+              .single()
+          ).data?.id || '')
+          .single();
+          
+        if (existingMember) {
+          throw new Error('User is already a member of this clan');
+        }
         
-      if (error) throw error;
-      return data;
+        // Check for existing pending invite
+        const { data: existingInvite, error: inviteError } = await supabase
+          .from('clan_invites')
+          .select('id')
+          .eq('clan_id', userClan.id)
+          .eq('invited_email', email)
+          .eq('status', 'pending')
+          .single();
+          
+        if (existingInvite) {
+          throw new Error('User already has a pending invite to this clan');
+        }
+        
+        // Create invite
+        const { error } = await supabase
+          .from('clan_invites')
+          .insert({
+            clan_id: userClan.id,
+            invited_email: email,
+            invite_code: generateInviteCode(),
+            status: 'pending',
+            expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days
+          } satisfies Partial<DBClanInvite>);
+          
+        if (error) throw error;
+        
+        return true;
+      } finally {
+        setLoading(false);
+      }
     },
     onSuccess: () => {
       toast({ 
         title: 'Invitation sent',
-        description: 'The invitation has been sent successfully.' 
+        description: 'The user has been invited to join your clan.' 
       });
     },
     onError: (error: Error) => {
@@ -357,6 +420,107 @@ export const useClan = () => {
         variant: 'destructive'
       });
     }
+  });
+
+  // Accept clan invite
+  const acceptInvite = useMutation({
+    mutationFn: async (inviteId: string) => {
+      if (!user?.id) throw new Error('User not authenticated');
+      
+      setLoading(true);
+      
+      try {
+        // Get the invite
+        const { data: invite, error: inviteError } = await supabase
+          .from('clan_invites')
+          .select('*')
+          .eq('id', inviteId)
+          .eq('invited_email', user.email)
+          .eq('status', 'pending')
+          .single();
+          
+        if (inviteError || !invite) {
+          throw new Error('Invalid or expired invite');
+        }
+        
+        // Accept the invite
+        const { error: transactionError } = await supabase
+          .from('clan_invites')
+          .update({ status: 'accepted' })
+          .eq('id', inviteId)
+          .select()
+          .single();
+        
+        if (transactionError) throw transactionError;
+        
+        // Add user to clan
+        const { error: memberError } = await supabase
+          .from('clan_members')
+          .insert({
+            clan_id: invite.clan_id,
+            user_id: user.id,
+            role: 'member'
+          });
+          
+        if (memberError) throw memberError;
+        
+        // Reject other pending invites
+        await supabase
+          .from('clan_invites')
+          .update({ status: 'rejected' })
+          .eq('invited_email', user.email)
+          .eq('status', 'pending')
+          .neq('id', inviteId);
+        
+        return true;
+      } finally {
+        setLoading(false);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user-clan'] });
+      toast({ 
+        title: 'Invite accepted',
+        description: 'You have joined the clan successfully.' 
+      });
+    },
+    onError: (error: Error) => {
+      toast({ 
+        title: 'Error accepting invite',
+        description: error.message,
+        variant: 'destructive'
+      });
+    }
+  });
+
+  // Get pending invites
+  const { data: pendingInvites = [], isLoading: isLoadingInvites } = useQuery<DBPendingInvite[]>({
+    queryKey: ['pending-invites', user?.email],
+    queryFn: async () => {
+      if (!user?.email) return [];
+      
+      const { data, error } = await supabase
+        .from('clan_invites')
+        .select(`
+          id,
+          clan_id,
+          invite_code,
+          created_at,
+          clans (
+            name,
+            description,
+            points
+          )
+        `)
+        .eq('invited_email', user.email)
+        .eq('status', 'pending')
+        .lt('expires_at', new Date().toISOString());
+        
+      if (error) throw error;
+      
+      return data || [];
+    },
+    enabled: !!user?.email
   });
   
   // Return all functions and data
@@ -374,6 +538,8 @@ export const useClan = () => {
     joinChallenge,
     completeChallenge,
     inviteUser,
+    acceptInvite,
+    pendingInvites,
     clanMembers: userClan?.members || []
   };
 };

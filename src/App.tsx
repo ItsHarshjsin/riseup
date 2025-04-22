@@ -1,5 +1,4 @@
-import React from 'react';
-import { Toaster } from "@/components/ui/toaster";
+import * as React from 'react';
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -24,13 +23,20 @@ const App: React.FC = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <Toaster />
         <Sonner />
         <Router>
           <Routes>
             <Route path="/" element={<LandingPage />} />
             <Route path="/auth" element={<AuthPage />} />
-            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/profile" element={
+              isAuthenticated ? (
+                <Layout>
+                  <ProfilePage />
+                </Layout>
+              ) : (
+                <Navigate to="/" replace />
+              )
+            } />
             <Route
               path="/dashboard"
               element={
@@ -47,7 +53,9 @@ const App: React.FC = () => {
               path="/clan"
               element={
                 isAuthenticated ? (
-                  <ClanPage />
+                  <Layout>
+                    <ClanPage />
+                  </Layout>
                 ) : (
                   <Navigate to="/" replace />
                 )
@@ -57,7 +65,9 @@ const App: React.FC = () => {
               path="/clan-management"
               element={
                 isAuthenticated ? (
-                  <ClanManagementPage />
+                  <Layout>
+                    <ClanManagementPage />
+                  </Layout>
                 ) : (
                   <Navigate to="/" replace />
                 )
