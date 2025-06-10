@@ -1,11 +1,4 @@
--- Drop existing clan tables if they exist
-DROP TABLE IF EXISTS clan_members;
-DROP TABLE IF EXISTS clan_challenges;
-DROP TABLE IF EXISTS clan_challenge_participants;
-DROP TABLE IF EXISTS clan_invites;
-DROP TABLE IF EXISTS clans;
-
--- Add status field to profiles table
+-- Add status field to profiles table if it doesn't exist
 ALTER TABLE profiles
 ADD COLUMN IF NOT EXISTS status text DEFAULT 'offline',
 ADD COLUMN IF NOT EXISTS last_active timestamp with time zone DEFAULT now();

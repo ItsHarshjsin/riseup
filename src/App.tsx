@@ -14,91 +14,108 @@ import Stats from "@/pages/Stats";
 import NotFound from "./pages/NotFound";
 import ProfilePage from "./pages/ProfilePage";
 import AuthPage from "./pages/AuthPage";
+import { useAuth } from "@/hooks/useAuth";
 
 const queryClient = new QueryClient();
 
-const App: React.FC = () => {
-  const isAuthenticated = true; // This should be handled by your auth system
+const AppRoutes = () => {
+  const { user, loading } = useAuth();
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <p className="text-xl text-mono-gray">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <Routes>
+      <Route path="/" element={<LandingPage />} />
+      <Route path="/auth" element={!user ? <AuthPage /> : <Navigate to="/profile" replace />} />
+      <Route path="/profile" element={
+        user ? (
+          <Layout>
+            <ProfilePage />
+          </Layout>
+        ) : (
+          <Navigate to="/auth" replace />
+        )
+      } />
+      <Route
+        path="/dashboard"
+        element={
+          user ? (
+            <Layout>
+              <Dashboard />
+            </Layout>
+          ) : (
+            <Navigate to="/auth" replace />
+          )
+        }
+      />
+      <Route
+        path="/clan"
+        element={
+          user ? (
+            <Layout>
+              <ClanPage />
+            </Layout>
+          ) : (
+            <Navigate to="/auth" replace />
+          )
+        }
+      />
+      <Route
+        path="/clan-management"
+        element={
+          user ? (
+            <Layout>
+              <ClanManagementPage />
+            </Layout>
+          ) : (
+            <Navigate to="/auth" replace />
+          )
+        }
+      />
+      <Route
+        path="/achievements"
+        element={
+          user ? (
+            <Layout>
+              <Achievements />
+            </Layout>
+          ) : (
+            <Navigate to="/auth" replace />
+          )
+        }
+      />
+      <Route
+        path="/stats"
+        element={
+          user ? (
+            <Layout>
+              <Stats />
+            </Layout>
+          ) : (
+            <Navigate to="/auth" replace />
+          )
+        }
+      />
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
+};
+
+const App: React.FC = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Sonner />
         <Router>
-          <Routes>
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/auth" element={<AuthPage />} />
-            <Route path="/profile" element={
-              isAuthenticated ? (
-                <Layout>
-                  <ProfilePage />
-                </Layout>
-              ) : (
-                <Navigate to="/" replace />
-              )
-            } />
-            <Route
-              path="/dashboard"
-              element={
-                isAuthenticated ? (
-                  <Layout>
-                    <Dashboard />
-                  </Layout>
-                ) : (
-                  <Navigate to="/" replace />
-                )
-              }
-            />
-            <Route
-              path="/clan"
-              element={
-                isAuthenticated ? (
-                  <Layout>
-                    <ClanPage />
-                  </Layout>
-                ) : (
-                  <Navigate to="/" replace />
-                )
-              }
-            />
-            <Route
-              path="/clan-management"
-              element={
-                isAuthenticated ? (
-                  <Layout>
-                    <ClanManagementPage />
-                  </Layout>
-                ) : (
-                  <Navigate to="/" replace />
-                )
-              }
-            />
-            <Route
-              path="/achievements"
-              element={
-                isAuthenticated ? (
-                  <Layout>
-                    <Achievements />
-                  </Layout>
-                ) : (
-                  <Navigate to="/" replace />
-                )
-              }
-            />
-            <Route
-              path="/stats"
-              element={
-                isAuthenticated ? (
-                  <Layout>
-                    <Stats />
-                  </Layout>
-                ) : (
-                  <Navigate to="/" replace />
-                )
-              }
-            />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <AppRoutes />
         </Router>
       </TooltipProvider>
     </QueryClientProvider>

@@ -1,4 +1,3 @@
-
 export interface User {
   id: string;
   username: string;
@@ -21,6 +20,7 @@ export interface Clan {
   challenges: Challenge[];
   points: number;
   createdAt: Date;
+  invite_code?: string;
 }
 
 export interface Task {

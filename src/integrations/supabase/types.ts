@@ -232,6 +232,7 @@ export type Database = {
           name: string
           owner_id: string
           points: number
+          invite_code: string
           updated_at: string
         }
         Insert: {
@@ -241,6 +242,7 @@ export type Database = {
           name: string
           owner_id: string
           points?: number
+          invite_code: string
           updated_at?: string
         }
         Update: {
@@ -250,6 +252,7 @@ export type Database = {
           name?: string
           owner_id?: string
           points?: number
+          invite_code?: string
           updated_at?: string
         }
         Relationships: []

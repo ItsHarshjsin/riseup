@@ -6,30 +6,58 @@ import UserStats from "@/components/dashboard/UserStats";
 import AchievementSummary from "@/components/dashboard/AchievementSummary";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
+import { useDashboard } from "@/hooks/useDashboard";
+import { Loader2 } from "lucide-react";
 
 const Dashboard = () => {
-  const { user, loading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const { 
+    isLoading: dashboardLoading,
+    categoryMasteryLoading,
+    tasks,
+    categoryMastery
+  } = useDashboard();
 
   // Redirect to auth page if not logged in
   useEffect(() => {
-    if (!loading && !user) {
+    if (!authLoading && !user) {
       navigate('/auth');
     }
-  }, [user, loading, navigate]);
+  }, [user, authLoading, navigate]);
 
-  if (loading) {
+  // Show loading state while auth or dashboard data is loading
+  if (authLoading || dashboardLoading || categoryMasteryLoading) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <div className="text-center">
-          <p className="text-xl text-mono-gray">Loading...</p>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center space-y-4">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto" />
+          <p className="text-xl text-mono-gray">Loading your dashboard...</p>
         </div>
       </div>
     );
   }
 
+  // Redirect if not authenticated
   if (!user) {
     return null; // Will redirect via useEffect
+  }
+
+  // Show error state if no data is available
+  if (!tasks || !categoryMastery) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center space-y-4">
+          <p className="text-xl text-red-500">Unable to load dashboard data</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="text-blue-500 hover:text-blue-700 underline"
+          >
+            Try again
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
